@@ -1,12 +1,8 @@
 #!/bin/bash
 set -e
 
-echo =====
-
 cc -o 9cc 9cc.c
-./9cc 123
-rm -f 9cc
+./9cc 123 > 9cc.s
+cat 9cc.s
 
-echo =====
-echo " "
-echo DONE
+rm 9cc 9cc.s
