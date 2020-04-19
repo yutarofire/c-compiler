@@ -4,7 +4,6 @@ CFLAGS=-std=c11 -g -static
 
 test: 9cc
 	./test.sh
-	rm 9cc
 
 clean:
 	rm 9cc
