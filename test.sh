@@ -1,6 +1,4 @@
 #!/bin/bash
-cc -o 9cc 9cc.c
-
 assert() {
   expected=$1
   input=$2
@@ -9,7 +7,7 @@ assert() {
   cc -o tmp tmp.s
   ./tmp
   actual=$?
-  rm tmp tmp.s
+  rm tmp.s tmp
 
   if [ "$actual" = "$expected" ]; then
     echo "$input => $actual"
@@ -21,7 +19,5 @@ assert() {
 
 assert 0 0
 assert 42 42
-
-rm 9cc
 
 echo OK
