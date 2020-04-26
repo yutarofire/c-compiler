@@ -4,6 +4,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+char *user_input;
+
+void error_at(char *loc, char *fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+
+  int pos = loc - user_input;
+  fprintf(stderr, "%s\n", user_input);
+  fprintf(stderr, "%*s", pos, "");
+  fprintf(stderr, "^ ");
+  vfprintf(stderr, fmt, ap);
+  fprintf(stderr, "\n");
+  exit(1);
+}
+
+/*
+ * Tokens
+ */
 typedef enum {
   TK_RESERVED,
   TK_NUM,
@@ -21,62 +39,8 @@ struct Token {
 
 Token *token;
 
-char *user_input;
-
-void error_at(char *loc, char *fmt, ...) {
-  va_list ap;
-  va_start(ap, fmt);
-
-  int pos = loc - user_input;
-  fprintf(stderr, "%s\n", user_input);
-  fprintf(stderr, "%*s", pos, "");
-  fprintf(stderr, "^ ");
-  vfprintf(stderr, fmt, ap);
-  fprintf(stderr, "\n");
-  exit(1);
-}
-
-/*
- * 次のtokenが期待しているcharのとき、tokenを1つ進めて
- * trueを返す。それ以外はfalseを返す。
- */
-bool consume(char op) {
-  if (token->kind != TK_RESERVED || token->str[0] != op)
-    return false;
-  token = token->next;
-  return true;
-}
-
-/*
- * 次のtokenが期待しているcharのとき、tokenを1つ進める。
- * それ以外はエラーを報告する。
- */
-void expect(char op) {
-  if (token->kind != TK_RESERVED || token->str[0] != op)
-    error_at(token->str, "Not '%c'", op);
-  token = token->next;
-}
-
-/*
- * 次のtokenが数値のとき、tokenを1つ進めてその数値を返す。
- * それ以外はエラーを報告する。
- */
-int expect_number() {
-  if (token->kind != TK_NUM)
-    error_at(token->str, "Not number");
-  int val = token->val;
-  token = token->next;
-  return val;
-}
-
-bool at_eof() {
-  return token->kind == TK_EOF;
-}
-
-/*
- * 新しいtokenを生成して、cur(rent) tokenのnextに繋げる。
- * 新しいtokenを返す。
- */
+// 新しいtokenを生成して、cur(rent) tokenのnextに繋げる。
+// 新しいtokenを返す。
 Token *new_token(TokenKind kind, Token *cur, char *str) {
   Token *tok = calloc(1, sizeof(Token));
   tok->kind = kind;
@@ -116,6 +80,44 @@ Token *tokenize(char *p) {
   return head.next;
 }
 
+bool at_eof() {
+  return token->kind == TK_EOF;
+}
+
+
+/*
+ * Token processors
+ */
+// 次のtokenが期待しているcharのとき、tokenを1つ進めて
+// trueを返す。それ以外はfalseを返す。
+bool consume(char op) {
+  if (token->kind != TK_RESERVED || token->str[0] != op)
+    return false;
+  token = token->next;
+  return true;
+}
+
+// 次のtokenが期待しているcharのとき、tokenを1つ進める。
+// それ以外はエラーを報告する。
+void expect(char op) {
+  if (token->kind != TK_RESERVED || token->str[0] != op)
+    error_at(token->str, "Not '%c'", op);
+  token = token->next;
+}
+
+// 次のtokenが数値のとき、tokenを1つ進めてその数値を返す。
+// それ以外はエラーを報告する。
+int expect_number() {
+  if (token->kind != TK_NUM)
+    error_at(token->str, "Not number");
+  int val = token->val;
+  token = token->next;
+  return val;
+}
+
+/*
+ * AST
+ */
 // ASTノードの種類
 typedef enum {
   ND_ADD, // +
@@ -150,19 +152,13 @@ Node *new_node_num(int val) {
   return node;
 }
 
-
-/*
- * production rule:
- *   expr = mul ("+" mul | "-" mul)*
- *   mul = unary ("*" unary | "/" unary)*
- *   unary = ("+" | "-")? primary
- *   primary = num | "(" expr ")"
- */
+// production rules
 Node *expr();
 Node *mul();
 Node *unary();
 Node *primary();
 
+// expr = mul ("+" mul | "-" mul)*
 Node *expr() {
   Node *node = mul();
 
@@ -176,6 +172,7 @@ Node *expr() {
   }
 }
 
+// mul = unary ("*" unary | "/" unary)*
 Node *mul() {
   Node *node = unary();
 
@@ -189,6 +186,7 @@ Node *mul() {
   }
 }
 
+// unary = ("+" | "-")? primary
 Node *unary() {
   if (consume('+'))
     return primary();
@@ -197,6 +195,7 @@ Node *unary() {
   return primary();
 }
 
+// primary = num | "(" expr ")"
 Node *primary() {
   if (consume('(')) {
     Node *node = expr();
