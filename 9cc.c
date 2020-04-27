@@ -358,3 +358,19 @@ int main(int argc, char **argv) {
   printf("  ret\n");
   return 0;
 }
+
+/*
+ * for debug
+
+  // token debug
+  printf("==========\n");
+  for (int i = 0; i < 100; i++) {
+    printf("str: \"%s\"\n", token->str);
+    printf("val: %d\n", token->val);
+    printf("len: %d\n", token->len);
+    token = token->next;
+    printf("----------\n");
+  }
+  printf("==========\n");
+
+ */
