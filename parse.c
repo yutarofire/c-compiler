@@ -1,39 +1,38 @@
 #include "9cc.h"
 
-// FIXME
-Token *tok;
+Token *currentToken;
 
 /*
- * tok processors
+ * token processors
  */
-// 次のtokが期待しているcharのとき、tokを1つ進めて
+// 次のtokenが期待しているcharのとき、tokenを1つ進めて
 // trueを返す。それ以外はfalseを返す。
 bool consume(char *op) {
-  if (tok->kind != TK_RESERVED ||
-      strlen(op) != tok->len ||
-      memcmp(tok->str, op, tok->len))
+  if (currentToken->kind != TK_RESERVED ||
+      strlen(op) != currentToken->len ||
+      memcmp(currentToken->str, op, currentToken->len))
     return false;
-  tok = tok->next;
+  currentToken = currentToken->next;
   return true;
 }
 
-// 次のtokが期待しているcharのとき、tokを1つ進める。
+// 次のcurrentTokenが期待しているcharのとき、currentTokenを1つ進める。
 // それ以外はエラーを報告する。
 void expect(char *op) {
-  if (tok->kind != TK_RESERVED ||
-      strlen(op) != tok->len ||
-      memcmp(tok->str, op, tok->len))
-    error_at(tok->str, "Not '%c'", op);
-  tok = tok->next;
+  if (currentToken->kind != TK_RESERVED ||
+      strlen(op) != currentToken->len ||
+      memcmp(currentToken->str, op, currentToken->len))
+    error_at(currentToken->str, "Not '%c'", op);
+  currentToken = currentToken->next;
 }
 
-// 次のtokが数値のとき、tokを1つ進めてその数値を返す。
+// 次のcurrentTokenが数値のとき、currentTokenを1つ進めてその数値を返す。
 // それ以外はエラーを報告する。
 int expect_number() {
-  if (tok->kind != TK_NUM)
-    error_at(tok->str, "Not number");
-  int val = tok->val;
-  tok = tok->next;
+  if (currentToken->kind != TK_NUM)
+    error_at(currentToken->str, "Not number");
+  int val = currentToken->val;
+  currentToken = currentToken->next;
   return val;
 }
 
@@ -147,11 +146,11 @@ Node *primary() {
 }
 
 Node *parse(Token *token) {
-  tok = token;
+  currentToken = token;
   Node *node = expr();
 
-  if (tok->kind != TK_EOF)
-    error_at(tok->str, "extra token");
+  if (currentToken->kind != TK_EOF)
+    error_at(currentToken->str, "extra token");
 
   return node;
 }
