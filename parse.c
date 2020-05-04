@@ -151,7 +151,7 @@ Node *parse(Token *token) {
   Node *node = expr();
 
   if (tok->kind != TK_EOF)
-    printf("error!!"); // FIXME
+    error_at(tok->str, "extra token");
 
   return node;
 }
