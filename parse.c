@@ -1,7 +1,5 @@
 #include "9cc.h"
 
-// FIXME: No definition of error_at
-
 // FIXME
 Token *tok;
 

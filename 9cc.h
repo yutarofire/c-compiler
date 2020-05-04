@@ -25,6 +25,9 @@ struct Token {
 
 Token *tokenize(char *p);
 
+void error(char *fmt, ...);
+void error_at(char *loc, char *fmt, ...);
+
 /*
  * parse.c
  */
