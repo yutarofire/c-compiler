@@ -19,21 +19,22 @@ int main(int argc, char **argv) {
   printf("token debug\n");
   printf("==========\n");
   for (int i = 0; i < 100; i++) {
-    printf("str: \"%s\"\n", token->str);
-    printf("val: %ld\n", token->val);
-    printf("len: %d\n", token->len);
     printf("kind: ");
     switch (token->kind) {
       case TK_RESERVED:
-        printf("TK_RESERVED\n");
+        printf("TK_RESERVED");
         break;
       case TK_NUM:
-        printf("TK_NUM\n");
+        printf("TK_NUM");
         break;
       case TK_EOF:
-        printf("TK_EOF\n");
+        printf("TK_EOF");
         break;
     }
+    printf("\n");
+    printf("str: \"%s\"\n", token->str);
+    printf("val: %ld\n", token->val);
+    printf("len: %d\n", token->len);
     token = token->next;
     printf("----------\n");
   }
