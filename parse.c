@@ -1,42 +1,17 @@
 #include "chibicc.h"
 
-Token *currentToken;
+// production rules
+static Node *expr();
+static Node *equality();
+static Node *relational();
+static Node *add();
+static Node *mul();
+static Node *unary();
+static Node *primary();
 
-/*
- * token processors
- */
-// 次のtokenが期待しているcharのとき、tokenを1つ進めて
-// trueを返す。それ以外はfalseを返す。
-bool consume(char *op) {
-  if (currentToken->kind != TK_RESERVED ||
-      strlen(op) != currentToken->len ||
-      memcmp(currentToken->str, op, currentToken->len))
-    return false;
-  currentToken = currentToken->next;
-  return true;
-}
+static Token *currentToken;
 
-// 次のcurrentTokenが期待しているcharのとき、currentTokenを1つ進める。
-// それ以外はエラーを報告する。
-void expect(char *op) {
-  if (currentToken->kind != TK_RESERVED ||
-      strlen(op) != currentToken->len ||
-      memcmp(currentToken->str, op, currentToken->len))
-    error_at(currentToken->str, "Not '%c'", op);
-  currentToken = currentToken->next;
-}
-
-// 次のcurrentTokenが数値のとき、currentTokenを1つ進めてその数値を返す。
-// それ以外はエラーを報告する。
-int expect_number() {
-  if (currentToken->kind != TK_NUM)
-    error_at(currentToken->str, "Not number");
-  int val = currentToken->val;
-  currentToken = currentToken->next;
-  return val;
-}
-
-Node *new_node(NodeKind kind, Node *lhs, Node *rhs) {
+static Node *new_node(NodeKind kind, Node *lhs, Node *rhs) {
   Node *node = calloc(1, sizeof(Node));
   node->kind = kind;
   node->lhs = lhs;
@@ -44,29 +19,40 @@ Node *new_node(NodeKind kind, Node *lhs, Node *rhs) {
   return node;
 }
 
-Node *new_node_num(int val) {
+static Node *new_num_node(long val) {
   Node *node = calloc(1, sizeof(Node));
   node->kind = ND_NUM;
   node->val = val;
   return node;
 }
 
-// production rules
-Node *expr();
-Node *equality();
-Node *relational();
-Node *add();
-Node *mul();
-Node *unary();
-Node *primary();
+static int get_number(Token *token) {
+  if (token->kind != TK_NUM)
+    error_at(token->str, "expected a number");
+  return token->val;
+}
+
+static bool equal(Token *token, char *op) {
+  return strlen(op) == token->len &&
+         !strncmp(token->str, op, token->len);
+}
+
+// 次のtokenが期待しているcharのとき、tokenを1つ進めて
+// trueを返す。それ以外はfalseを返す。
+bool consume(char *op) {
+  if (!equal(currentToken, op))
+    return false;
+  currentToken = currentToken->next;
+  return true;
+}
 
 // expr = equality
-Node *expr() {
+static Node *expr() {
   return equality();
 }
 
 // equality = relational ("==" relational | "!=" relational)*
-Node *equality() {
+static Node *equality() {
   Node *node = relational();
 
   for (;;) {
@@ -80,7 +66,7 @@ Node *equality() {
 }
 
 // relational = add ("<" add | "<=" add | ">=" add | ">" add)*
-Node *relational() {
+static Node *relational() {
   Node *node = add();
 
   for (;;) {
@@ -98,7 +84,7 @@ Node *relational() {
 }
 
 // add = mul ("+" mul | "-" mul)*
-Node *add(){
+static Node *add(){
   Node *node = mul();
 
   for (;;) {
@@ -112,7 +98,7 @@ Node *add(){
 }
 
 // mul = unary ("*" unary | "/" unary)*
-Node *mul() {
+static Node *mul() {
   Node *node = unary();
 
   for (;;) {
@@ -126,31 +112,34 @@ Node *mul() {
 }
 
 // unary = ("+" | "-")? primary
-Node *unary() {
+static Node *unary() {
   if (consume("+"))
     return primary();
   else if (consume("-"))
-    return new_node(ND_SUB, new_node_num(0), primary());
-  return primary();
+    return new_node(ND_SUB, new_num_node(0), primary());
+  else
+    return primary();
 }
 
 // primary = num | "(" expr ")"
-Node *primary() {
+static Node *primary() {
   if (consume("(")) {
     Node *node = expr();
-    expect(")");
-    return node;
+    if (consume(")"))
+      return node;
+    else
+      error_at(currentToken->str, "Not ')'");
   }
 
-  return new_node_num(expect_number());
+  Node *node = new_num_node(get_number(currentToken));
+  currentToken = currentToken->next;
+  return node;
 }
 
 Node *parse(Token *token) {
   currentToken = token;
   Node *node = expr();
-
   if (currentToken->kind != TK_EOF)
     error_at(currentToken->str, "extra token");
-
   return node;
 }

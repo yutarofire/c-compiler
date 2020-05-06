@@ -18,12 +18,12 @@ typedef struct Token Token;
 struct Token {
   TokenKind kind;
   Token *next;
-  int val;
+  long val;
   char *str;
   int len;
 };
 
-Token *tokenize(char *p);
+Token *tokenize(char *input);
 
 void error(char *fmt, ...);
 void error_at(char *loc, char *fmt, ...);
@@ -40,8 +40,8 @@ typedef enum {
   ND_NE,  // !=
   ND_LAT, // >
   ND_LET, // <
-  ND_LEE, // <=
   ND_LAE, // >=
+  ND_LEE, // <=
   ND_NUM, // number
 } NodeKind;
 
@@ -50,7 +50,7 @@ struct Node {
   NodeKind kind;
   Node *lhs; // left-hand side
   Node *rhs; // right-hand side
-  int val;
+  long val;
 };
 
 Node *parse(Token *token);

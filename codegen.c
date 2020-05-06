@@ -1,13 +1,13 @@
 #include "chibicc.h"
 
-void gen(Node *node) {
+static void gen_expr(Node *node) {
   if (node->kind == ND_NUM) {
-    printf("  push %d\n", node->val);
+    printf("  push %ld\n", node->val);
     return;
   }
 
-  gen(node->lhs);
-  gen(node->rhs);
+  gen_expr(node->lhs);
+  gen_expr(node->rhs);
 
   printf("  pop rdi\n");
   printf("  pop rax\n");
@@ -66,7 +66,7 @@ void codegen(Node *node) {
   printf(".global main\n");
   printf("main:\n");
 
-  gen(node);
+  gen_expr(node);
 
   printf("  pop rax\n");
   printf("  ret\n");

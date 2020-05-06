@@ -1,6 +1,6 @@
 #include "chibicc.h"
 
-char *user_input;
+static char *user_input;
 
 // Reports an error and exit.
 void error(char *fmt, ...) {
@@ -12,7 +12,7 @@ void error(char *fmt, ...) {
 }
 
 // Reports an error location and exit.
-void verror_at(char *loc, char *fmt, va_list ap) {
+static void verror_at(char *loc, char *fmt, va_list ap) {
   int pos = loc - user_input;
   fprintf(stderr, "%s\n", user_input);
   fprintf(stderr, "%*s", pos, "");
@@ -30,7 +30,7 @@ void error_at(char *loc, char *fmt, ...) {
 
 // 新しいtokenを生成して、cur(rent) tokenのnextに繋げる。
 // 新しいtokenを返す。
-Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
+static Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
   Token *tok = calloc(1, sizeof(Token));
   tok->kind = kind;
   tok->str = str;
