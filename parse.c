@@ -1,7 +1,10 @@
 #include "chibicc.h"
 
 // production rules
+static Node *program();
+static Node *stmt();
 static Node *expr();
+static Node *assign();
 static Node *equality();
 static Node *relational();
 static Node *add();
@@ -10,6 +13,7 @@ static Node *unary();
 static Node *primary();
 
 static Token *currentToken;
+static Node *code[100];
 
 static Node *new_node(NodeKind kind, Node *lhs, Node *rhs) {
   Node *node = calloc(1, sizeof(Node));
@@ -23,6 +27,13 @@ static Node *new_num_node(long val) {
   Node *node = calloc(1, sizeof(Node));
   node->kind = ND_NUM;
   node->val = val;
+  return node;
+}
+
+static Node *new_ident_node(char var) {
+  Node *node = calloc(1, sizeof(Node));
+  node->kind = ND_LVAR;
+  node->offset = (var - 'a' + 1) * 8;
   return node;
 }
 
@@ -46,9 +57,36 @@ bool consume(char *op) {
   return true;
 }
 
-// expr = equality
+// program = stmt*
+static Node *program() {
+  int i = 0;
+  while (currentToken->kind != TK_EOF)
+    code[i++] = stmt();
+  code[i] = NULL;
+}
+
+// stmt = expr ";"
+static Node *stmt() {
+  Node *node = expr();
+
+  if (consume(";"))
+    return node;
+  else
+    error_at(currentToken->str, "Not ';'");
+}
+
+// expr = assign
 static Node *expr() {
-  return equality();
+  return assign();
+}
+
+// assign = equality ("=" assign)?
+static Node *assign() {
+  Node *node = equality();
+
+  if (consume("="))
+    node = new_node(ND_ASSIGN, node, assign());
+  return node;
 }
 
 // equality = relational ("==" relational | "!=" relational)*
@@ -121,25 +159,31 @@ static Node *unary() {
     return primary();
 }
 
-// primary = num | "(" expr ")"
+// primary = num | ident | "(" expr ")"
 static Node *primary() {
+  Node *node;
+
   if (consume("(")) {
-    Node *node = expr();
+    node = expr();
     if (consume(")"))
       return node;
     else
       error_at(currentToken->str, "Not ')'");
   }
 
-  Node *node = new_num_node(get_number(currentToken));
+  if (currentToken->kind == TK_NUM)
+    node = new_num_node(get_number(currentToken));
+  else if (currentToken->kind == TK_IDENT)
+    node = new_ident_node(currentToken->str[0]);
+
   currentToken = currentToken->next;
   return node;
 }
 
-Node *parse(Token *token) {
+Node **parse(Token *token) {
   currentToken = token;
-  Node *node = expr();
+  program();
   if (currentToken->kind != TK_EOF)
     error_at(currentToken->str, "extra token");
-  return node;
+  return code;
 }

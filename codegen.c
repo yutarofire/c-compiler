@@ -1,13 +1,38 @@
 #include "chibicc.h"
 
-static void gen_expr(Node *node) {
-  if (node->kind == ND_NUM) {
-    printf("  push %ld\n", node->val);
-    return;
+// スタックに変数のアドレスをpushする
+static void gen_lvar(Node *node) {
+  if (node->kind != ND_LVAR)
+    error("expected a variable");
+
+  printf("  mov rax, rbp\n");
+  printf("  sub rax, %d\n", node->offset);
+  printf("  push rax\n");
+}
+
+static void gen(Node *node) {
+  switch (node->kind) {
+    case ND_NUM:
+      printf("  push %ld\n", node->val);
+      return;
+    case ND_LVAR:
+      gen_lvar(node);
+      printf("  pop rax\n");        // 変数のアドレスをpop
+      printf("  mov rax, [rax]\n"); // 変数の値を取得
+      printf("  push rax\n");       // 変数の値をpush
+      return;
+    case ND_ASSIGN:
+      gen_lvar(node->lhs);
+      gen(node->rhs);
+      printf("  pop rdi\n");        // 右辺の値をpop
+      printf("  pop rax\n");        // 変数のアドレスをpop
+      printf("  mov [rax], rdi\n"); // 変数に右辺の値を代入
+      printf("  push rdi\n");       // 右辺の値をpush
+      return;
   }
 
-  gen_expr(node->lhs);
-  gen_expr(node->rhs);
+  gen(node->lhs);
+  gen(node->rhs);
 
   printf("  pop rdi\n");
   printf("  pop rax\n");
@@ -62,12 +87,5 @@ static void gen_expr(Node *node) {
 }
 
 void codegen(Node *node) {
-  printf(".intel_syntax noprefix\n");
-  printf(".global main\n");
-  printf("main:\n");
-
-  gen_expr(node);
-
-  printf("  pop rax\n");
-  printf("  ret\n");
+  gen(node);
 }
