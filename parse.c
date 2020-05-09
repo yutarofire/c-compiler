@@ -15,6 +15,16 @@ static Node *primary();
 static Token *currentToken;
 static Node *code[100];
 
+LVar *locals;
+
+static LVar *find_lvar(Token *token) {
+  for (LVar *lvar = locals; lvar; lvar = lvar->next)
+    if (strlen(lvar->name) == token->len &&
+        !strncmp(token->str, lvar->name, token->len))
+      return lvar;
+  return NULL;
+}
+
 static Node *new_node(NodeKind kind, Node *lhs, Node *rhs) {
   Node *node = calloc(1, sizeof(Node));
   node->kind = kind;
@@ -30,11 +40,23 @@ static Node *new_num_node(long val) {
   return node;
 }
 
-static Node *new_ident_node(char var) {
+static Node *new_ident_node(LVar *lvar) {
   Node *node = calloc(1, sizeof(Node));
   node->kind = ND_LVAR;
-  node->offset = (var - 'a' + 1) * 8;
+  node->lvar = lvar;
   return node;
+}
+
+static LVar *new_lvar(char *name) {
+  LVar *lvar = calloc(1, sizeof(LVar));
+  lvar->name = name;
+  lvar->next = locals;
+  if (locals)
+    lvar->offset = locals->offset + 8;
+  else
+    lvar->offset = 0;
+  locals = lvar;
+  return lvar;
 }
 
 static int get_number(Token *token) {
@@ -173,12 +195,19 @@ static Node *primary() {
 
   if (currentToken->kind == TK_NUM)
     node = new_num_node(get_number(currentToken));
-  else if (currentToken->kind == TK_IDENT)
-    node = new_ident_node(currentToken->str[0]);
+
+  if (currentToken->kind == TK_IDENT) {
+    LVar *lvar = find_lvar(currentToken);
+    if (!lvar)
+      lvar = new_lvar(strndup(currentToken->str, currentToken->len));
+    node = new_ident_node(lvar);
+  }
 
   currentToken = currentToken->next;
   return node;
 }
+
+static void debug_local_vars();
 
 Node **parse(Token *token) {
   currentToken = token;
@@ -186,4 +215,17 @@ Node **parse(Token *token) {
   if (currentToken->kind != TK_EOF)
     error_at(currentToken->str, "extra token");
   return code;
+}
+
+/*
+ * for debugging
+ */
+static void debug_local_vars() {
+  printf("=== LOCAL VARS ===\n");
+  for (LVar *lvar = locals; lvar; lvar = lvar->next) {
+    printf("name: %s\n", lvar->name);
+    printf("offset: %d\n", lvar->offset);
+    printf("----------\n");
+  }
+  exit(1);
 }

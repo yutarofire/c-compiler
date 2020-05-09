@@ -12,7 +12,7 @@ assert() {
   if [ "$actual" = "$expected" ]; then
     echo "\"$input\" => $actual"
   else
-    echo "$input => $expected expected, but got $actual"
+    echo "\"$input\" => $expected expected, but got $actual"
     exit 1
   fi
 }
@@ -50,5 +50,8 @@ assert 7 "1+2; 3+4;"
 assert 5 "a=1; a+4;"
 assert 0 "a=2==3; a;"
 assert 8 "r=1+2*3; 1+r;"
+assert 14 "foo=1+2*3; foo*2;"
+assert 15 "foo=1+2*3; bar=foo+1; foo+bar;"
+assert 15 "foo=1+2*3; faa=foo+1; foo+faa;"
 
 echo OK

@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200809L
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -48,13 +49,20 @@ typedef enum {
   ND_NUM,    // integer
 } NodeKind;
 
+typedef struct LVar LVar;
+struct LVar {
+  LVar *next;
+  char *name;
+  int offset;
+};
+
 typedef struct Node Node;
 struct Node {
   NodeKind kind;
   Node *lhs;  // left-hand side
   Node *rhs;  // right-hand side
+  LVar *lvar; // used for ND_LVAR
   long val;   // used for ND_NUM
-  int offset; // used for ND_LVAR
 };
 
 Node **parse(Token *token);
