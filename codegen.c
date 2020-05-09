@@ -1,4 +1,4 @@
-#include "chibicc.h"
+#include "9cc.h"
 
 // スタックに変数のアドレスをpushする
 static void gen_lvar(Node *node) {

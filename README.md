@@ -2,5 +2,5 @@
 
 ### Run test
 ```
-docker run --rm -v $PWD:/chibicc -w /chibicc compilerbook make test
+docker run --rm -v $PWD:/9cc -w /9cc compilerbook make test
 ```

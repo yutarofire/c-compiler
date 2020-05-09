@@ -1,4 +1,4 @@
-#include "chibicc.h"
+#include "9cc.h"
 
 // production rules
 static Node *program();

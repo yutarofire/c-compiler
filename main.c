@@ -1,4 +1,4 @@
-#include "chibicc.h"
+#include "9cc.h"
 
 static void debug_token(Token *token);
 static void debug_node(Node *node);

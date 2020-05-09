@@ -3,7 +3,7 @@ assert() {
   expected=$1
   input=$2
 
-  ./chibicc "$input" > tmp.s
+  ./9cc "$input" > tmp.s
   cc -o tmp tmp.s
   ./tmp
   actual=$?
