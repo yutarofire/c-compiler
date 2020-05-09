@@ -43,9 +43,8 @@ static Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
 Token *tokenize(char *p) {
   user_input = p;
 
-  // ダミーのtokenを先頭に持ってくる。
-  Token head;
-  head.next = NULL;
+  // Dummy head token
+  Token head = {};
   Token *cur = &head;
 
   while (*p) {
@@ -54,6 +53,23 @@ Token *tokenize(char *p) {
       continue;
     }
 
+    // Numeric literal
+    if (isdigit(*p)) {
+      cur = new_token(TK_NUM, cur, p, 0);
+      cur->val = strtol(p, &p, 10);
+      continue;
+    }
+
+    // Identifier
+    if (isalpha(*p)) {
+      char *q = p++;
+      while (isalnum(*p))
+        p++;
+      cur = new_token(TK_IDENT, cur, q, p - q);
+      continue;
+    }
+
+    // Multi-letter operators
     if (strncmp(p, "==", 2) == 0 ||
         strncmp(p, "!=", 2) == 0 ||
         strncmp(p, ">=", 2) == 0 ||
@@ -63,6 +79,7 @@ Token *tokenize(char *p) {
       continue;
     }
 
+    // Single-letter operators
     if (*p == '+' || *p == '-' ||
         *p == '*' || *p == '/' ||
         *p == '<' || *p == '>' ||
@@ -72,21 +89,7 @@ Token *tokenize(char *p) {
       continue;
     }
 
-    if (isalpha(*p)) {
-      char *q = p++;
-      while (isalnum(*p))
-        p++;
-      cur = new_token(TK_IDENT, cur, q, p - q);
-      continue;
-    }
-
-    if (isdigit(*p)) {
-      cur = new_token(TK_NUM, cur, p, 0);
-      cur->val = strtol(p, &p, 10);
-      continue;
-    }
-
-    error_at(p, "Cannot tokenize");
+    error_at(p, "Invalid token");
   }
 
   new_token(TK_EOF, cur, p, 0);
