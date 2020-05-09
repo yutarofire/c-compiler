@@ -15,13 +15,13 @@ static Node *primary();
 static Token *currentToken;
 static Node *code[100];
 
-LVar *locals;
+Var *locals;
 
-static LVar *find_lvar(Token *token) {
-  for (LVar *lvar = locals; lvar; lvar = lvar->next)
-    if (strlen(lvar->name) == token->len &&
-        !strncmp(token->str, lvar->name, token->len))
-      return lvar;
+static Var *find_var(Token *token) {
+  for (Var *var = locals; var; var = var->next)
+    if (strlen(var->name) == token->len &&
+        !strncmp(token->str, var->name, token->len))
+      return var;
   return NULL;
 }
 
@@ -40,23 +40,23 @@ static Node *new_num_node(long val) {
   return node;
 }
 
-static Node *new_ident_node(LVar *lvar) {
+static Node *new_ident_node(Var *var) {
   Node *node = calloc(1, sizeof(Node));
   node->kind = ND_LVAR;
-  node->lvar = lvar;
+  node->var = var;
   return node;
 }
 
-static LVar *new_lvar(char *name) {
-  LVar *lvar = calloc(1, sizeof(LVar));
-  lvar->name = name;
-  lvar->next = locals;
+static Var *new_var(char *name) {
+  Var *var = calloc(1, sizeof(Var));
+  var->name = name;
+  var->next = locals;
   if (locals)
-    lvar->offset = locals->offset + 8;
+    var->offset = locals->offset + 8;
   else
-    lvar->offset = 0;
-  locals = lvar;
-  return lvar;
+    var->offset = 0;
+  locals = var;
+  return var;
 }
 
 static int get_number(Token *token) {
@@ -197,10 +197,10 @@ static Node *primary() {
     node = new_num_node(get_number(currentToken));
 
   if (currentToken->kind == TK_IDENT) {
-    LVar *lvar = find_lvar(currentToken);
-    if (!lvar)
-      lvar = new_lvar(strndup(currentToken->str, currentToken->len));
-    node = new_ident_node(lvar);
+    Var *var = find_var(currentToken);
+    if (!var)
+      var = new_var(strndup(currentToken->str, currentToken->len));
+    node = new_ident_node(var);
   }
 
   currentToken = currentToken->next;
@@ -222,9 +222,9 @@ Node **parse(Token *token) {
  */
 static void debug_local_vars() {
   printf("=== LOCAL VARS ===\n");
-  for (LVar *lvar = locals; lvar; lvar = lvar->next) {
-    printf("name: %s\n", lvar->name);
-    printf("offset: %d\n", lvar->offset);
+  for (Var *var = locals; var; var = var->next) {
+    printf("name: %s\n", var->name);
+    printf("offset: %d\n", var->offset);
     printf("----------\n");
   }
   exit(1);

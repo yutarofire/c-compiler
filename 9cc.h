@@ -16,6 +16,7 @@ typedef enum {
   TK_EOF,      // EOF
 } TokenKind;
 
+// Token
 typedef struct Token Token;
 struct Token {
   TokenKind kind;
@@ -33,6 +34,14 @@ void error_at(char *loc, char *fmt, ...);
 /*
  * parse.c
  */
+// Local variable
+typedef struct Var Var;
+struct Var {
+  Var *next;
+  char *name;
+  int offset;
+};
+
 typedef enum {
   ND_ADD,    // +
   ND_SUB,    // -
@@ -49,20 +58,14 @@ typedef enum {
   ND_NUM,    // integer
 } NodeKind;
 
-typedef struct LVar LVar;
-struct LVar {
-  LVar *next;
-  char *name;
-  int offset;
-};
-
+// AST Node
 typedef struct Node Node;
 struct Node {
   NodeKind kind;
-  Node *lhs;  // left-hand side
-  Node *rhs;  // right-hand side
-  LVar *lvar; // used for ND_LVAR
-  long val;   // used for ND_NUM
+  Node *lhs; // left-hand side
+  Node *rhs; // right-hand side
+  Var *var;  // used for ND_LVAR
+  long val;  // used for ND_NUM
 };
 
 Node **parse(Token *token);
