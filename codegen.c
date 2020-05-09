@@ -86,6 +86,25 @@ static void gen(Node *node) {
   printf("  push rax\n");
 }
 
-void codegen(Node *node) {
-  gen(node);
+void codegen(Node **code) {
+  printf(".intel_syntax noprefix\n");
+  printf(".global main\n");
+  printf("main:\n");
+
+  // Prologue
+  printf("  push rbp\n");
+  printf("  mov rbp, rsp\n");
+  printf("  sub rsp, 208\n");
+
+  for (int i = 0; code[i]; i++) {
+    gen(code[i]);
+    // 式の評価結果がスタックに残っている
+    // はずなので、popしておく
+    printf("  pop rax\n");
+  }
+
+  // Epilogue
+  printf("  mov rsp, rbp\n");
+  printf("  pop rbp\n");
+  printf("  ret\n");
 }

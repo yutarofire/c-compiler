@@ -9,31 +9,7 @@ int main(int argc, char **argv) {
 
   Token *token = tokenize(argv[1]);
   Node **code = parse(token);
-
-  /*
-   * generate assembly code
-   */
-  printf(".intel_syntax noprefix\n");
-  printf(".global main\n");
-  printf("main:\n");
-
-  // prologue
-  printf("  push rbp\n");
-  printf("  mov rbp, rsp\n");
-  printf("  sub rsp, 208\n");
-
-  for (int i = 0; code[i]; i++) {
-    codegen(code[i]);
-
-    // 式の評価結果がスタックに残っている
-    // はずなので、popしておく
-    printf("  pop rax\n");
-  }
-
-  // epilogue
-  printf("  mov rsp, rbp\n");
-  printf("  pop rbp\n");
-  printf("  ret\n");
+  codegen(code);
 
   return 0; 
 }

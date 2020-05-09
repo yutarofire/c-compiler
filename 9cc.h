@@ -73,4 +73,4 @@ Node **parse(Token *token);
 /*
  * codegen.c
  */
-void codegen(Node *node);
+void codegen(Node **node);
