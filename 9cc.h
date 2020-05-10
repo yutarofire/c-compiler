@@ -54,6 +54,7 @@ typedef enum {
   ND_LAE,    // >=
   ND_LEE,    // <=
   ND_ASSIGN, // =
+  ND_RETURN, // "return"
   ND_LVAR,   // local variable
   ND_NUM,    // integer
 } NodeKind;

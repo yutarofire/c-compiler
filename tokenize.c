@@ -28,10 +28,6 @@ void error_at(char *loc, char *fmt, ...) {
   verror_at(loc, fmt, ap);
 }
 
-static bool starts_with(char *p, char *q) {
-  return strncmp(p, q, strlen(q)) == 0;
-}
-
 // 新しいtokenを生成して、cur(rent) tokenのnextに繋げる。
 // 新しいtokenを返す。
 static Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
@@ -41,6 +37,15 @@ static Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
   tok->len = len;
   cur->next = tok;
   return tok;
+}
+
+static bool starts_with(char *p, char *q) {
+  return strncmp(p, q, strlen(q)) == 0;
+}
+
+static bool is_alnum(char c) {
+  return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') ||
+         ('0' <= c && c <= '9') || c == '_';
 }
 
 // tokenのlinked listを構築する。
@@ -61,6 +66,12 @@ Token *tokenize(char *p) {
     if (isdigit(*p)) {
       cur = new_token(TK_NUM, cur, p, 0);
       cur->val = strtol(p, &p, 10);
+      continue;
+    }
+
+    if (starts_with(p, "return") && !is_alnum(p[6])) {
+      cur = new_token(TK_RESERVED, cur, p, 6);
+      p += 6;
       continue;
     }
 

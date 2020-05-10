@@ -53,5 +53,7 @@ assert 8 "r=1+2*3; 1+r;"
 assert 14 "foo=1+2*3; foo*2;"
 assert 15 "foo=1+2*3; bar=foo+1; foo+bar;"
 assert 15 "foo=1+2*3; faa=foo+1; foo+faa;"
+assert 3 "foo=1+2; return foo;"
+assert 3 "foo=1+2; return foo; return foo+2;"
 
 echo OK

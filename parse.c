@@ -87,14 +87,22 @@ static Node *program() {
   code[i] = NULL;
 }
 
-// stmt = expr ";"
+// stmt = "return" expr ";" | expr ";"
 static Node *stmt() {
-  Node *node = expr();
+  Node *node;
 
-  if (consume(";"))
-    return node;
-  else
+  if (consume("return")) {
+    node = calloc(1, sizeof(Node));
+    node->kind = ND_RETURN;
+    node->lhs = expr();
+  } else {
+    node = expr();
+  }
+
+  if (!consume(";"))
     error_at(currentToken->str, "Not ';'");
+
+  return node;
 }
 
 // expr = assign
