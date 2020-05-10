@@ -88,7 +88,7 @@ static Node *program() {
 }
 
 // stmt = "return" expr ";"
-//      | "if" "(" expr ")" stmt
+//      | "if" "(" expr ")" stmt ("else" stmt)?
 //      | expr ";"
 static Node *stmt() {
   Node *node;
@@ -111,6 +111,8 @@ static Node *stmt() {
     if (!consume(")"))
       error_at(currentToken->str, "Not ')'");
     node->then = stmt();
+    if (consume("else"))
+      node->els = stmt();
     return node;
   }
 

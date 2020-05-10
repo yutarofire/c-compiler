@@ -71,6 +71,7 @@ struct Node {
   // "if" statement
   Node *cond;
   Node *then;
+  Node *els;
 
   Var *var;  // used for ND_LVAR
   long val;  // used for ND_NUM

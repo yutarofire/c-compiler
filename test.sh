@@ -61,5 +61,7 @@ assert 10 "if (1) return 10; return 20;"
 assert 20 "if (0) return 10; return 20;"
 assert 10 "if (0+1) return 10; return 20;"
 assert 20 "if (1-1) return 10; return 20;"
+assert 10 "if (1) return 10; else return 20; return 30;"
+assert 20 "if (0) return 10; else return 20; return 30;"
 
 echo OK

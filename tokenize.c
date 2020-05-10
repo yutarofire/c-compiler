@@ -69,6 +69,9 @@ Token *tokenize(char *p) {
       continue;
     }
 
+    /*
+     * TODO: Simplify keyword tokenizer.
+     */
     if (starts_with(p, "return") && !is_alnum(p[6])) {
       cur = new_token(TK_RESERVED, cur, p, 6);
       p += 6;
@@ -78,6 +81,12 @@ Token *tokenize(char *p) {
     if (starts_with(p, "if") && !is_alnum(p[2])) {
       cur = new_token(TK_RESERVED, cur, p, 2);
       p += 2;
+      continue;
+    }
+
+    if (starts_with(p, "else") && !is_alnum(p[4])) {
+      cur = new_token(TK_RESERVED, cur, p, 4);
+      p += 4;
       continue;
     }
 
