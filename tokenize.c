@@ -28,6 +28,10 @@ void error_at(char *loc, char *fmt, ...) {
   verror_at(loc, fmt, ap);
 }
 
+static bool starts_with(char *p, char *q) {
+  return strncmp(p, q, strlen(q)) == 0;
+}
+
 // 新しいtokenを生成して、cur(rent) tokenのnextに繋げる。
 // 新しいtokenを返す。
 static Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
@@ -70,21 +74,19 @@ Token *tokenize(char *p) {
     }
 
     // Multi-letter operators
-    if (strncmp(p, "==", 2) == 0 ||
-        strncmp(p, "!=", 2) == 0 ||
-        strncmp(p, ">=", 2) == 0 ||
-        strncmp(p, "<=", 2) == 0) {
+    if (starts_with(p, "==") || starts_with(p, "!=") ||
+        starts_with(p, ">=") || starts_with(p, "<=")) {
       cur = new_token(TK_RESERVED, cur, p, 2);
       p += 2;
       continue;
     }
 
     // Single-letter operators
-    if (*p == '+' || *p == '-' ||
-        *p == '*' || *p == '/' ||
-        *p == '<' || *p == '>' ||
-        *p == '(' || *p == ')' ||
-        *p == '=' || *p == ';') {
+    if (starts_with(p, "+") || starts_with(p, "-") ||
+        starts_with(p, "*") || starts_with(p, "/") ||
+        starts_with(p, "<") || starts_with(p, ">") ||
+        starts_with(p, "(") || starts_with(p, ")") ||
+        starts_with(p, "=") || starts_with(p, ";")) {
       cur = new_token(TK_RESERVED, cur, p++, 1);
       continue;
     }
