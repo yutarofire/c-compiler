@@ -89,6 +89,7 @@ static Node *program() {
 
 // stmt = "return" expr ";"
 //      | "if" "(" expr ")" stmt ("else" stmt)?
+//      | "for" "(" expr? ";" expr? ";" expr? ")" stmt
 //      | "while" "(" expr ")" stmt
 //      | expr ";"
 static Node *stmt() {
@@ -114,6 +115,37 @@ static Node *stmt() {
     node->then = stmt();
     if (consume("else"))
       node->els = stmt();
+    return node;
+  }
+
+  // FIXME
+  if (consume("for")) {
+    node = calloc(1, sizeof(Node));
+    node->kind = ND_FOR;
+    if (!consume("("))
+      error_at(currentToken->str, "Not '('");
+    if (consume(";")) {
+      node->init = NULL;
+    } else {
+      node->init = expr();
+      if (!consume(";"))
+        error_at(currentToken->str, "Not ';'");
+    }
+    if (consume(";")) {
+      node->cond = NULL;
+    } else {
+      node->cond = expr();
+      if (!consume(";"))
+        error_at(currentToken->str, "Not ';'");
+    }
+    if (consume(")")) {
+      node->inc = NULL;
+    } else {
+      node->inc = expr();
+      if (!consume(")"))
+        error_at(currentToken->str, "Not ')'");
+    }
+    node->then = stmt();
     return node;
   }
 
