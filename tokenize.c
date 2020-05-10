@@ -69,9 +69,7 @@ Token *tokenize(char *p) {
       continue;
     }
 
-    /*
-     * TODO: Simplify keyword tokenizer.
-     */
+    // Keywords
     if (starts_with(p, "return") && !is_alnum(p[6])) {
       cur = new_token(TK_RESERVED, cur, p, 6);
       p += 6;
