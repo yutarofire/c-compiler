@@ -64,4 +64,6 @@ assert 20 "if (1-1) return 10; return 20;"
 assert 10 "if (1) return 10; else return 20; return 30;"
 assert 20 "if (0) return 10; else return 20; return 30;"
 
+assert 6 "i=0; while (i<5) i=i+3; return i;"
+
 echo OK

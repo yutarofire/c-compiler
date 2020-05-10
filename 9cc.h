@@ -56,6 +56,7 @@ typedef enum {
   ND_ASSIGN, // =
   ND_RETURN, // "return"
   ND_IF,     // "if"
+  ND_WHILE,  // "while"
   ND_LVAR,   // local variable
   ND_NUM,    // integer
 } NodeKind;
@@ -68,7 +69,7 @@ struct Node {
   Node *lhs; // left-hand side
   Node *rhs; // right-hand side
 
-  // "if" statement
+  // used for control flows
   Node *cond;
   Node *then;
   Node *els;
