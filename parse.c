@@ -87,7 +87,9 @@ static Node *program() {
   code[i] = NULL;
 }
 
-// stmt = "return" expr ";" | expr ";"
+// stmt = "return" expr ";"
+//      | "if" "(" expr ")" stmt
+//      | expr ";"
 static Node *stmt() {
   Node *node;
 
@@ -95,13 +97,26 @@ static Node *stmt() {
     node = calloc(1, sizeof(Node));
     node->kind = ND_RETURN;
     node->lhs = expr();
-  } else {
-    node = expr();
+    if (!consume(";"))
+      error_at(currentToken->str, "Not ';'");
+    return node;
   }
 
+  if (consume("if")) {
+    node = calloc(1, sizeof(Node));
+    node->kind = ND_IF;
+    if (!consume("("))
+      error_at(currentToken->str, "Not '('");
+    node->cond = expr();
+    if (!consume(")"))
+      error_at(currentToken->str, "Not ')'");
+    node->then = stmt();
+    return node;
+  }
+
+  node = expr();
   if (!consume(";"))
     error_at(currentToken->str, "Not ';'");
-
   return node;
 }
 
