@@ -118,33 +118,27 @@ static Node *stmt() {
     return node;
   }
 
-  // FIXME
   if (consume("for")) {
     node = calloc(1, sizeof(Node));
     node->kind = ND_FOR;
     if (!consume("("))
       error_at(currentToken->str, "Not '('");
-    if (consume(";")) {
-      node->init = NULL;
-    } else {
+
+    if (!equal(currentToken, ";"))
       node->init = expr();
-      if (!consume(";"))
+    if (!consume(";"))
         error_at(currentToken->str, "Not ';'");
-    }
-    if (consume(";")) {
-      node->cond = NULL;
-    } else {
+
+    if (!equal(currentToken, ";"))
       node->cond = expr();
-      if (!consume(";"))
-        error_at(currentToken->str, "Not ';'");
-    }
-    if (consume(")")) {
-      node->inc = NULL;
-    } else {
+    if (!consume(";"))
+      error_at(currentToken->str, "Not ';'");
+
+    if (!equal(currentToken, ")"))
       node->inc = expr();
-      if (!consume(")"))
-        error_at(currentToken->str, "Not ')'");
-    }
+    if (!consume(")"))
+      error_at(currentToken->str, "Not ')'");
+
     node->then = stmt();
     return node;
   }
