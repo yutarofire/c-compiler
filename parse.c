@@ -75,7 +75,7 @@ static bool equal(Token *token, char *op) {
 
 // 次のtokenが期待しているcharのとき、tokenを1つ進めて
 // trueを返す。それ以外はfalseを返す。
-bool consume(char *op) {
+static bool consume(char *op) {
   if (!equal(currentToken, op))
     return false;
   currentToken = currentToken->next;
