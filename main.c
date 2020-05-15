@@ -1,7 +1,6 @@
 #include "9cc.h"
 
 static void debug_token(Token *token);
-static void debug_node(Node *node);
 
 int main(int argc, char **argv) {
   if (argc != 2)
@@ -46,63 +45,6 @@ static void debug_token(Token *token) {
     if (token->kind == TK_EOF)
       break;
     printf("----------\n");
-  }
-  printf("==========\n");
-  exit(1);
-}
-
-static void debug_node(Node *node) {
-  printf("=== NODE DEBUG ===\n");
-  for (int i = 0; i < 100; i++) {
-    printf("kind: ");
-    switch (node->kind) {
-      case ND_ADD:
-        printf("+");
-        break;
-      case ND_SUB:
-        printf("-");
-        break;
-      case ND_MUL:
-        printf("*");
-        break;
-      case ND_DIV:
-        printf("/");
-        break;
-      case ND_EQ:
-        printf("==");
-        break;
-      case ND_NE:
-        printf("!=");
-        break;
-      case ND_LAT:
-        printf(">");
-        break;
-      case ND_LET:
-        printf("<");
-        break;
-      case ND_LAE:
-        printf(">=");
-        break;
-      case ND_LEE:
-        printf("<=");
-        break;
-      case ND_ASSIGN:
-        printf("=");
-        break;
-      case ND_LVAR:
-        printf("local var");
-        break;
-      case ND_NUM:
-        printf("number");
-        break;
-      default:
-        printf("ERROR");
-        break;
-    }
-    printf("\n");
-    printf("val: %ld\n", node->val);
-    printf("----------\n");
-    node = node->lhs;
   }
   printf("==========\n");
   exit(1);

@@ -91,6 +91,7 @@ static Node *program() {
 //      | "if" "(" expr ")" stmt ("else" stmt)?
 //      | "for" "(" expr? ";" expr? ";" expr? ")" stmt
 //      | "while" "(" expr ")" stmt
+//      | "{" stmt* "}"
 //      | expr ";"
 static Node *stmt() {
   Node *node;
@@ -152,6 +153,19 @@ static Node *stmt() {
     if (!consume(")"))
       error_at(currentToken->str, "Not ')'");
     node->then = stmt();
+    return node;
+  }
+
+  if (consume("{")) {
+    Node head = {};
+    Node *cur = &head;
+
+    while (!consume("}"))
+      cur = cur->next = stmt();
+
+    node = calloc(1, sizeof(Node));
+    node->kind = ND_BLOCK;
+    node->body = head.next;
     return node;
   }
 

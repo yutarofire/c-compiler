@@ -67,4 +67,10 @@ assert 6 "for (i=0; i<5; i=i+3) 10; return i;"
 assert 10 "for (;;) return 10;"
 assert 6 "i=0; while (i<5) i=i+3; return i;"
 
+assert 10 "{ return 10; }"
+assert 10 "{ x=10; return x; }"
+assert 10 "if (1) { x=10; return x; } else { y=11; return y; }"
+assert 11 "if (0) { x=10; return x; } else { y=11; return y; }"
+assert 12 "if (0) { x=10; return x; } else {} return 12;"
+
 echo OK

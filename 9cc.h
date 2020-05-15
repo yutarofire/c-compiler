@@ -60,6 +60,7 @@ typedef enum {
   ND_WHILE,  // "while"
   ND_LVAR,   // local variable
   ND_NUM,    // integer
+  ND_BLOCK,  // block
 } NodeKind;
 
 // AST Node
@@ -79,6 +80,10 @@ struct Node {
 
   Var *var;  // used for ND_LVAR
   long val;  // used for ND_NUM
+
+  // used for ND_BLOCK
+  Node *body;
+  Node *next;
 };
 
 Node **parse(Token *token);
