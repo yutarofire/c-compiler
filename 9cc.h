@@ -10,10 +10,10 @@
  * tokenize.c
  */
 typedef enum {
-  TK_RESERVED, // 記号
-  TK_IDENT,    // 識別子
-  TK_NUM,      // 整数
-  TK_EOF,      // EOF
+  TK_RESERVED, // Keywords or orerators
+  TK_IDENT,    // Identifiers
+  TK_NUM,      // Numeric literals
+  TK_EOF,      // End-of-file markers
 } TokenKind;
 
 // Token
@@ -21,9 +21,9 @@ typedef struct Token Token;
 struct Token {
   TokenKind kind;
   Token *next;
-  long val;
-  char *str;
-  int len;
+  long val;  // If TK_NUM, number value
+  char *str; // Rested string
+  int len;   // Token length
 };
 
 Token *tokenize(char *input);
@@ -39,7 +39,7 @@ typedef struct Var Var;
 struct Var {
   Var *next;
   char *name;
-  int offset;
+  int offset; // Offset from RBForP
 };
 
 typedef enum {
@@ -58,9 +58,9 @@ typedef enum {
   ND_IF,     // "if"
   ND_FOR,    // "for"
   ND_WHILE,  // "while"
-  ND_LVAR,   // local variable
-  ND_NUM,    // integer
-  ND_BLOCK,  // block
+  ND_BLOCK,  // Block "{...}"
+  ND_LVAR,   // Local variable
+  ND_NUM,    // Integer
 } NodeKind;
 
 // AST Node
@@ -68,20 +68,20 @@ typedef struct Node Node;
 struct Node {
   NodeKind kind;
 
-  Node *lhs; // left-hand side
-  Node *rhs; // right-hand side
+  Node *lhs; // Left-hand side
+  Node *rhs; // Right-hand side
 
-  // used for control flows
+  Var *var;  // For ND_LVAR
+  long val;  // For ND_NUM
+
+  // For control flows
   Node *init;
   Node *cond;
   Node *inc;
   Node *then;
   Node *els;
 
-  Var *var;  // used for ND_LVAR
-  long val;  // used for ND_NUM
-
-  // used for ND_BLOCK
+  // For ND_BLOCK
   Node *body;
   Node *next;
 };

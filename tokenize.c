@@ -52,11 +52,12 @@ static bool is_alnum(char c) {
 Token *tokenize(char *p) {
   user_input = p;
 
-  // Dummy head token
+  // Dummy token
   Token head = {};
   Token *cur = &head;
 
   while (*p) {
+    // Skip whitespace characters.
     if (isspace(*p)) {
       p++;
       continue;

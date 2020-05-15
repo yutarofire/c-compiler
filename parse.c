@@ -1,6 +1,9 @@
 #include "9cc.h"
 
-// production rules
+static Token *currentToken;
+static Node *code[100];
+Var *locals;
+
 static Node *program();
 static Node *stmt();
 static Node *expr();
@@ -12,11 +15,7 @@ static Node *mul();
 static Node *unary();
 static Node *primary();
 
-static Token *currentToken;
-static Node *code[100];
-
-Var *locals;
-
+// Find local variable by name.
 static Var *find_var(Token *token) {
   for (Var *var = locals; var; var = var->next)
     if (strlen(var->name) == token->len &&
@@ -25,24 +24,27 @@ static Var *find_var(Token *token) {
   return NULL;
 }
 
-static Node *new_node(NodeKind kind, Node *lhs, Node *rhs) {
+static Node *new_node(NodeKind kind) {
   Node *node = calloc(1, sizeof(Node));
   node->kind = kind;
+  return node;
+}
+
+static Node *new_binary_node(NodeKind kind, Node *lhs, Node *rhs) {
+  Node *node = new_node(kind);
   node->lhs = lhs;
   node->rhs = rhs;
   return node;
 }
 
 static Node *new_num_node(long val) {
-  Node *node = calloc(1, sizeof(Node));
-  node->kind = ND_NUM;
+  Node *node = new_node(ND_NUM);
   node->val = val;
   return node;
 }
 
 static Node *new_ident_node(Var *var) {
-  Node *node = calloc(1, sizeof(Node));
-  node->kind = ND_LVAR;
+  Node *node = new_node(ND_LVAR);
   node->var = var;
   return node;
 }
@@ -51,6 +53,7 @@ static Var *new_var(char *name) {
   Var *var = calloc(1, sizeof(Var));
   var->name = name;
   var->next = locals;
+  // FIXME
   if (locals)
     var->offset = locals->offset + 8;
   else
@@ -79,6 +82,13 @@ bool consume(char *op) {
   return true;
 }
 
+static void skip(char *op) {
+  if (consume(op))
+    return;
+  else
+    error_at(currentToken->str, "Not '%s'", op);
+}
+
 // program = stmt*
 static Node *program() {
   int i = 0;
@@ -94,25 +104,18 @@ static Node *program() {
 //      | "{" stmt* "}"
 //      | expr ";"
 static Node *stmt() {
-  Node *node;
-
   if (consume("return")) {
-    node = calloc(1, sizeof(Node));
-    node->kind = ND_RETURN;
+    Node *node = new_node(ND_RETURN);
     node->lhs = expr();
-    if (!consume(";"))
-      error_at(currentToken->str, "Not ';'");
+    skip(";");
     return node;
   }
 
   if (consume("if")) {
-    node = calloc(1, sizeof(Node));
-    node->kind = ND_IF;
-    if (!consume("("))
-      error_at(currentToken->str, "Not '('");
+    Node *node = new_node(ND_IF);
+    skip("(");
     node->cond = expr();
-    if (!consume(")"))
-      error_at(currentToken->str, "Not ')'");
+    skip(")");
     node->then = stmt();
     if (consume("else"))
       node->els = stmt();
@@ -120,38 +123,30 @@ static Node *stmt() {
   }
 
   if (consume("for")) {
-    node = calloc(1, sizeof(Node));
-    node->kind = ND_FOR;
-    if (!consume("("))
-      error_at(currentToken->str, "Not '('");
+    Node *node = new_node(ND_FOR);
+    skip("(");
 
     if (!equal(currentToken, ";"))
       node->init = expr();
-    if (!consume(";"))
-        error_at(currentToken->str, "Not ';'");
+    skip(";");
 
     if (!equal(currentToken, ";"))
       node->cond = expr();
-    if (!consume(";"))
-      error_at(currentToken->str, "Not ';'");
+    skip(";");
 
     if (!equal(currentToken, ")"))
       node->inc = expr();
-    if (!consume(")"))
-      error_at(currentToken->str, "Not ')'");
+    skip(")");
 
     node->then = stmt();
     return node;
   }
 
   if (consume("while")) {
-    node = calloc(1, sizeof(Node));
-    node->kind = ND_WHILE;
-    if (!consume("("))
-      error_at(currentToken->str, "Not '('");
+    Node *node = new_node(ND_WHILE);
+    skip("(");
     node->cond = expr();
-    if (!consume(")"))
-      error_at(currentToken->str, "Not ')'");
+    skip(")");
     node->then = stmt();
     return node;
   }
@@ -163,15 +158,13 @@ static Node *stmt() {
     while (!consume("}"))
       cur = cur->next = stmt();
 
-    node = calloc(1, sizeof(Node));
-    node->kind = ND_BLOCK;
+    Node *node = new_node(ND_BLOCK);
     node->body = head.next;
     return node;
   }
 
-  node = expr();
-  if (!consume(";"))
-    error_at(currentToken->str, "Not ';'");
+  Node *node = expr();
+  skip(";");
   return node;
 }
 
@@ -183,9 +176,8 @@ static Node *expr() {
 // assign = equality ("=" assign)?
 static Node *assign() {
   Node *node = equality();
-
   if (consume("="))
-    node = new_node(ND_ASSIGN, node, assign());
+    node = new_binary_node(ND_ASSIGN, node, assign());
   return node;
 }
 
@@ -195,9 +187,9 @@ static Node *equality() {
 
   for (;;) {
     if (consume("=="))
-      node = new_node(ND_EQ, node, relational());
+      node = new_binary_node(ND_EQ, node, relational());
     else if (consume("!="))
-      node = new_node(ND_NE, node, relational());
+      node = new_binary_node(ND_NE, node, relational());
     else
       return node;
   }
@@ -209,13 +201,13 @@ static Node *relational() {
 
   for (;;) {
     if (consume("<"))
-      node = new_node(ND_LET, node, relational());
-    else if (consume("<="))
-      node = new_node(ND_LEE, node, relational());
+      node = new_binary_node(ND_LET, node, relational());
     else if (consume(">"))
-      node = new_node(ND_LAT, node, relational());
+      node = new_binary_node(ND_LAT, node, relational());
+    else if (consume("<="))
+      node = new_binary_node(ND_LEE, node, relational());
     else if (consume(">="))
-      node = new_node(ND_LAE, node, relational());
+      node = new_binary_node(ND_LAE, node, relational());
     else
       return node;
   }
@@ -227,9 +219,9 @@ static Node *add(){
 
   for (;;) {
     if (consume("+"))
-      node = new_node(ND_ADD, node, mul());
+      node = new_binary_node(ND_ADD, node, mul());
     else if (consume("-"))
-      node = new_node(ND_SUB, node, mul());
+      node = new_binary_node(ND_SUB, node, mul());
     else
       return node;
   }
@@ -241,9 +233,9 @@ static Node *mul() {
 
   for (;;) {
     if (consume("*"))
-      node = new_node(ND_MUL, node, unary());
+      node = new_binary_node(ND_MUL, node, unary());
     else if (consume("/"))
-      node = new_node(ND_DIV, node, unary());
+      node = new_binary_node(ND_DIV, node, unary());
     else
       return node;
   }
@@ -253,39 +245,36 @@ static Node *mul() {
 static Node *unary() {
   if (consume("+"))
     return primary();
-  else if (consume("-"))
-    return new_node(ND_SUB, new_num_node(0), primary());
-  else
-    return primary();
+
+  if (consume("-"))
+    return new_binary_node(ND_SUB, new_num_node(0), primary());
+
+  return primary();
 }
 
 // primary = num | ident | "(" expr ")"
 static Node *primary() {
-  Node *node;
-
   if (consume("(")) {
-    node = expr();
-    if (consume(")"))
-      return node;
-    else
-      error_at(currentToken->str, "Not ')'");
+    Node *node = expr();
+    skip(")");
+    return node;
   }
 
-  if (currentToken->kind == TK_NUM)
-    node = new_num_node(get_number(currentToken));
+  if (currentToken->kind == TK_NUM) {
+    Node *node = new_num_node(get_number(currentToken));
+    currentToken = currentToken->next;
+    return node;
+  }
 
   if (currentToken->kind == TK_IDENT) {
     Var *var = find_var(currentToken);
     if (!var)
       var = new_var(strndup(currentToken->str, currentToken->len));
-    node = new_ident_node(var);
+    Node *node = new_ident_node(var);
+    currentToken = currentToken->next;
+    return node;
   }
-
-  currentToken = currentToken->next;
-  return node;
 }
-
-static void debug_local_vars();
 
 Node **parse(Token *token) {
   currentToken = token;
@@ -293,17 +282,4 @@ Node **parse(Token *token) {
   if (currentToken->kind != TK_EOF)
     error_at(currentToken->str, "extra token");
   return code;
-}
-
-/*
- * for debugging
- */
-static void debug_local_vars() {
-  printf("=== LOCAL VARS ===\n");
-  for (Var *var = locals; var; var = var->next) {
-    printf("name: %s\n", var->name);
-    printf("offset: %d\n", var->offset);
-    printf("----------\n");
-  }
-  exit(1);
 }
