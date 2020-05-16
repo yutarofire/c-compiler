@@ -7,8 +7,8 @@ int main(int argc, char **argv) {
     error("%s: wrong number of arguments", argv[0]);
 
   Token *token = tokenize(argv[1]);
-  Node **code = parse(token);
-  codegen(code);
+  Function *prog = parse(token);
+  codegen(prog);
 
   return 0; 
 }

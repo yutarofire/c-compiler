@@ -1,8 +1,7 @@
 #include "9cc.h"
 
 static Token *currentToken;
-static Node *code[100];
-Var *locals;
+static Var *locals;
 
 static Node *program();
 static Node *stmt();
@@ -91,10 +90,13 @@ static void skip(char *op) {
 
 // program = stmt*
 static Node *program() {
-  int i = 0;
+  Node head = {};
+  Node *cur = &head;
+
   while (currentToken->kind != TK_EOF)
-    code[i++] = stmt();
-  code[i] = NULL;
+    cur = cur->next = stmt();
+
+  return head.next;
 }
 
 // stmt = "return" expr ";"
@@ -276,10 +278,15 @@ static Node *primary() {
   }
 }
 
-Node **parse(Token *token) {
+Function *parse(Token *token) {
   currentToken = token;
-  program();
+  Node *node = program();
+
   if (currentToken->kind != TK_EOF)
     error_at(currentToken->str, "extra token");
-  return code;
+
+  Function *prog = calloc(1, sizeof(Function));
+  prog->node = node;
+  prog->locals = locals;
+  return prog;
 }

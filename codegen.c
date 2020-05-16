@@ -150,7 +150,7 @@ static void gen(Node *node) {
   printf("  push rax\n");
 }
 
-void codegen(Node **code) {
+void codegen(Function *prog) {
   printf(".intel_syntax noprefix\n");
   printf(".global main\n");
   printf("main:\n");
@@ -160,8 +160,8 @@ void codegen(Node **code) {
   printf("  mov rbp, rsp\n");
   printf("  sub rsp, 208\n");
 
-  for (int i = 0; code[i]; i++) {
-    gen(code[i]);
+  for (Node *n = prog->node; n; n = n->next) {
+    gen(n);
     // 式の評価結果がスタックに残っている
     // はずなので、popしておく
     printf("  pop rax\n");

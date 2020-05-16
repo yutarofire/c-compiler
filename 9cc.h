@@ -67,6 +67,7 @@ typedef enum {
 typedef struct Node Node;
 struct Node {
   NodeKind kind;
+  Node *next;
 
   Node *lhs; // Left-hand side
   Node *rhs; // Right-hand side
@@ -83,12 +84,17 @@ struct Node {
 
   // For ND_BLOCK
   Node *body;
-  Node *next;
 };
 
-Node **parse(Token *token);
+typedef struct Function Function;
+struct Function {
+  Node *node;
+  Var *locals;
+};
+
+Function *parse(Token *token);
 
 /*
  * codegen.c
  */
-void codegen(Node **node);
+void codegen(Function *prog);
