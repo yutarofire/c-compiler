@@ -158,7 +158,7 @@ void codegen(Function *prog) {
   // Prologue
   printf("  push rbp\n");
   printf("  mov rbp, rsp\n");
-  printf("  sub rsp, 208\n");
+  printf("  sub rsp, %d\n", prog->stack_size);
 
   for (Node *n = prog->node; n; n = n->next) {
     gen(n);

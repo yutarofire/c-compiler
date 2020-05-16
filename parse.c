@@ -52,11 +52,6 @@ static Var *new_var(char *name) {
   Var *var = calloc(1, sizeof(Var));
   var->name = name;
   var->next = locals;
-  // FIXME
-  if (locals)
-    var->offset = locals->offset + 8;
-  else
-    var->offset = 0;
   locals = var;
   return var;
 }
@@ -278,6 +273,10 @@ static Node *primary() {
   }
 }
 
+static int align_to(int n, int align) {
+  return (n + align - 1) & ~(align - 1);
+}
+
 Function *parse(Token *token) {
   currentToken = token;
   Node *node = program();
@@ -287,6 +286,16 @@ Function *parse(Token *token) {
 
   Function *prog = calloc(1, sizeof(Function));
   prog->node = node;
+
+  // Assign offsets to local variables.
+  int offset = 32; // 32 for callee-saved registers
+  for (Var *var = locals; var; var = var->next) {
+    offset += 8;
+    var->offset = offset;
+  }
+
   prog->locals = locals;
+  prog->stack_size = align_to(offset, 16);
+
   return prog;
 }
