@@ -41,11 +41,12 @@ static void gen(Node *node) {
       if (node->init)
         gen(node->init);
       printf(".L.begin.%d:\n", seq);
-      if (node->cond)
+      if (node->cond) {
         gen(node->cond);
-      printf("  pop rax\n");
-      printf("  cmp rax, 0\n");
-      printf("  je  .L.end.%d\n", seq);
+        printf("  pop rax\n");
+        printf("  cmp rax, 0\n");
+        printf("  je  .L.end.%d\n", seq);
+      }
       gen(node->then);
       if (node->inc)
         gen(node->inc);
