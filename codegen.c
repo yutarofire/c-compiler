@@ -152,7 +152,7 @@ static void gen(Node *node) {
 
 void codegen(Function *prog) {
   printf(".intel_syntax noprefix\n");
-  printf(".global main\n");
+  printf(".globl main\n");
   printf("main:\n");
 
   // Prologue
