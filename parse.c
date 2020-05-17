@@ -249,17 +249,11 @@ static Node *unary() {
   return primary();
 }
 
-// primary = num | ident | "(" expr ")"
+// primary = "(" expr ")" | ident | num
 static Node *primary() {
   if (consume("(")) {
     Node *node = expr();
     skip(")");
-    return node;
-  }
-
-  if (currentToken->kind == TK_NUM) {
-    Node *node = new_num_node(get_number(currentToken));
-    currentToken = currentToken->next;
     return node;
   }
 
@@ -271,6 +265,14 @@ static Node *primary() {
     currentToken = currentToken->next;
     return node;
   }
+
+  if (currentToken->kind == TK_NUM) {
+    Node *node = new_num_node(get_number(currentToken));
+    currentToken = currentToken->next;
+    return node;
+  }
+
+  error_at(currentToken->str, "unexpected token");
 }
 
 static int align_to(int n, int align) {

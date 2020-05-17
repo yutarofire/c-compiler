@@ -69,11 +69,12 @@ struct Node {
   NodeKind kind;
   Node *next;
 
-  Node *lhs; // Left-hand side
-  Node *rhs; // Right-hand side
+  Node *lhs;  // Left-hand side
+  Node *rhs;  // Right-hand side
 
-  Var *var;  // For ND_LVAR
-  long val;  // For ND_NUM
+  Var *var;   // For ND_LVAR
+  long val;   // For ND_NUM
+  Node *body; // For ND_BLOCK
 
   // For control flows
   Node *init;
@@ -81,9 +82,6 @@ struct Node {
   Node *inc;
   Node *then;
   Node *els;
-
-  // For ND_BLOCK
-  Node *body;
 };
 
 typedef struct Function Function;
