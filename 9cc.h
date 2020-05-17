@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 /*
  * tokenize.c
@@ -59,7 +60,7 @@ typedef enum {
   ND_FOR,    // "for"
   ND_WHILE,  // "while"
   ND_BLOCK,  // Block "{...}"
-  ND_LVAR,   // Local variable
+  ND_VAR,    // Local variable
   ND_NUM,    // Integer
 } NodeKind;
 
@@ -72,7 +73,7 @@ struct Node {
   Node *lhs;  // Left-hand side
   Node *rhs;  // Right-hand side
 
-  Var *var;   // For ND_LVAR
+  Var *var;   // For ND_VAR
   long val;   // For ND_NUM
   Node *body; // For ND_BLOCK
 

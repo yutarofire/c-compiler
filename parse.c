@@ -42,12 +42,6 @@ static Node *new_num_node(long val) {
   return node;
 }
 
-static Node *new_ident_node(Var *var) {
-  Node *node = new_node(ND_LVAR);
-  node->var = var;
-  return node;
-}
-
 static Var *new_var(char *name) {
   Var *var = calloc(1, sizeof(Var));
   var->name = name;
@@ -261,7 +255,8 @@ static Node *primary() {
     Var *var = find_var(currentToken);
     if (!var)
       var = new_var(strndup(currentToken->str, currentToken->len));
-    Node *node = new_ident_node(var);
+    Node *node = new_node(ND_VAR);
+    node->var = var;
     currentToken = currentToken->next;
     return node;
   }

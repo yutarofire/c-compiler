@@ -1,15 +1,21 @@
 #include "9cc.h"
 
+static int top;
 static int labelseq = 1;
 
-// スタックに変数のアドレスをpushする
-static void gen_lvar(Node *node) {
-  if (node->kind != ND_LVAR)
+static char *reg(int idx) {
+  char *r[] = {"r10", "r11", "r12", "r13", "r14", "r15"};
+  if (idx < 0 || sizeof(r) / sizeof(*r) <= idx)
+    error("register out of range: %d", idx);
+  return r[idx];
+}
+
+// Pushes the given node's address to the stack.
+static void gen_var(Node *node) {
+  if (node->kind != ND_VAR)
     error("expected a variable");
 
-  printf("  mov rax, rbp\n");
-  printf("  sub rax, %d\n", node->var->offset);
-  printf("  push rax\n");
+  printf("  lea %s, [rbp-%d]\n", reg(top++), node->var->offset);
 }
 
 static void gen(Node *node) {
@@ -18,8 +24,7 @@ static void gen(Node *node) {
       int seq = labelseq++;
       if (node->els) {
         gen(node->cond);
-        printf("  pop rax\n");
-        printf("  cmp rax, 0\n");
+        printf("  cmp %s, 0\n", reg(--top));
         printf("  je  .L.else.%d\n", seq);
         gen(node->then);
         printf("  je  .L.end.%d\n", seq);
@@ -28,8 +33,7 @@ static void gen(Node *node) {
         printf(".L.end.%d:\n", seq);
       } else {
         gen(node->cond);
-        printf("  pop rax\n");
-        printf("  cmp rax, 0\n");
+        printf("  cmp %s, 0\n", reg(--top));
         printf("  je  .L.end.%d\n", seq);
         gen(node->then);
         printf(".L.end.%d:\n", seq);
@@ -43,8 +47,7 @@ static void gen(Node *node) {
       printf(".L.begin.%d:\n", seq);
       if (node->cond) {
         gen(node->cond);
-        printf("  pop rax\n");
-        printf("  cmp rax, 0\n");
+        printf("  cmp %s, 0\n", reg(--top));
         printf("  je  .L.end.%d\n", seq);
       }
       gen(node->then);
@@ -57,98 +60,99 @@ static void gen(Node *node) {
     case ND_WHILE: {
       int seq = labelseq++;
       printf(".L.begin.%d:\n", seq);
-      gen(node->cond);
-      printf("  pop rax\n");
-      printf("  cmp rax, 0\n");
-      printf("  je  .L.end.%d\n", seq);
+      if (node->cond) {
+        gen(node->cond);
+        printf("  cmp %s, 0\n", reg(--top));
+        printf("  je  .L.end.%d\n", seq);
+      }
       gen(node->then);
       printf("  jmp .L.begin.%d\n", seq);
       printf(".L.end.%d:\n", seq);
       return;
     }
-    case ND_RETURN:
-      gen(node->lhs);
-      printf("  pop rax\n");
-      printf("  mov rsp, rbp\n");
-      printf("  pop rbp\n");
-      printf("  ret\n");
-      return;
-    case ND_NUM:
-      printf("  push %ld\n", node->val);
-      return;
-    case ND_LVAR:
-      gen_lvar(node);
-      printf("  pop rax\n");        // 変数のアドレスをpop
-      printf("  mov rax, [rax]\n"); // 変数の値を取得
-      printf("  push rax\n");       // 変数の値をpush
-      return;
-    case ND_ASSIGN:
-      gen_lvar(node->lhs);
-      gen(node->rhs);
-      printf("  pop rdi\n");        // 右辺の値をpop
-      printf("  pop rax\n");        // 変数のアドレスをpop
-      printf("  mov [rax], rdi\n"); // 変数に右辺の値を代入
-      printf("  push rdi\n");       // 右辺の値をpush
-      return;
     case ND_BLOCK:
       for (Node *n = node->body; n; n = n->next)
         gen(n);
+      return;
+    case ND_RETURN:
+      gen(node->lhs);
+      printf("  mov rax, %s\n", reg(--top));
+      printf("  jmp .L.return\n");
+      return;
+    case ND_NUM:
+      printf("  mov %s, %ld\n", reg(top++), node->val);
+      return;
+    case ND_VAR:
+      gen_var(node);
+      // Fetch value of variable by its address,
+      // and load it onto register.
+      printf("  mov %s, [%s]\n", reg(top - 1), reg(top - 1));
+      return;
+    case ND_ASSIGN:
+      gen(node->rhs);
+      gen_var(node->lhs);
+      printf("  mov [%s], %s\n", reg(top - 1), reg(top - 2));
+      // Right-hand value remains on top of reg.
+      top--;
       return;
   }
 
   gen(node->lhs);
   gen(node->rhs);
 
-  printf("  pop rdi\n");
-  printf("  pop rax\n");
+  char *rd = reg(top - 2); // left-hand value
+  char *rs = reg(top - 1); // right-hand value
+  top--;
 
   switch (node->kind) {
     case ND_ADD:
-      printf("  add rax, rdi\n");
-      break;
+      printf("  add %s, %s\n", rd, rs);
+      return;
     case ND_SUB:
-      printf("  sub rax, rdi\n");
-      break;
+      printf("  sub %s, %s\n", rd, rs);
+      return;
     case ND_MUL:
-      printf("  imul rax, rdi\n");
-      break;
+      printf("  imul %s, %s\n", rd, rs);
+      return;
     case ND_DIV:
+      printf("  mov rax, %s\n", rd);
       printf("  cqo\n");
-      printf("  idiv rdi\n");
-      break;
+      printf("  idiv %s\n", rs);
+      printf("  mov %s, rax\n", rd);
+      return;
     case ND_EQ:
-      printf("  cmp rax, rdi\n");
+      printf("  cmp %s, %s\n", rd, rs);
       printf("  sete al\n");
-      printf("  movzb rax, al\n");
-      break;
+      printf("  movzx %s, al\n", rd);
+      return;
     case ND_NE:
-      printf("  cmp rax, rdi\n");
+      printf("  cmp %s, %s\n", rd, rs);
       printf("  setne al\n");
-      printf("  movzb rax, al\n");
-      break;
+      printf("  movzx %s, al\n", rd);
+      return;
     case ND_LAT:
-      printf("  cmp rdi, rax\n");
+      printf("  cmp %s, %s\n", rs, rd);
       printf("  setl al\n");
-      printf("  movzb rax, al\n");
-      break;
+      printf("  movzx %s, al\n", rd);
+      return;
     case ND_LET:
-      printf("  cmp rax, rdi\n");
+      printf("  cmp %s, %s\n", rd, rs);
       printf("  setl al\n");
-      printf("  movzb rax, al\n");
-      break;
+      printf("  movzx %s, al\n", rd);
+      return;
     case ND_LAE:
-      printf("  cmp rdi, rax\n");
+      printf("  cmp %s, %s\n", rs, rd);
       printf("  setle al\n");
-      printf("  movzb rax, al\n");
-      break;
+      printf("  movzx %s, al\n", rd);
+      return;
     case ND_LEE:
-      printf("  cmp rax, rdi\n");
+      printf("  cmp %s, %s\n", rd, rs);
       printf("  setle al\n");
-      printf("  movzb rax, al\n");
-      break;
+      printf("  movzx %s, al\n", rd);
+      return;
+    default:
+      error("invalid expression");
   }
-
-  printf("  push rax\n");
 }
 
 void codegen(Function *prog) {
@@ -157,18 +161,27 @@ void codegen(Function *prog) {
   printf("main:\n");
 
   // Prologue
+  // r12-15 are callee-saved registers.
   printf("  push rbp\n");
   printf("  mov rbp, rsp\n");
   printf("  sub rsp, %d\n", prog->stack_size);
+  printf("  mov [rbp-8], r12\n");
+  printf("  mov [rbp-16], r13\n");
+  printf("  mov [rbp-24], r14\n");
+  printf("  mov [rbp-32], r15\n");
 
   for (Node *n = prog->node; n; n = n->next) {
     gen(n);
-    // 式の評価結果がスタックに残っている
-    // はずなので、popしておく
-    printf("  pop rax\n");
+    // FIXME
+    // assert(top == 0);
   }
 
   // Epilogue
+  printf(".L.return:\n");
+  printf("  mov r12, [rbp-8]\n");
+  printf("  mov r13, [rbp-16]\n");
+  printf("  mov r14, [rbp-24]\n");
+  printf("  mov r15, [rbp-32]\n");
   printf("  mov rsp, rbp\n");
   printf("  pop rbp\n");
   printf("  ret\n");
