@@ -44,24 +44,25 @@ struct Var {
 };
 
 typedef enum {
-  ND_ADD,    // +
-  ND_SUB,    // -
-  ND_MUL,    // *
-  ND_DIV,    // /
-  ND_EQ,     // ==
-  ND_NE,     // !=
-  ND_LAT,    // >
-  ND_LET,    // <
-  ND_LAE,    // >=
-  ND_LEE,    // <=
-  ND_ASSIGN, // =
-  ND_RETURN, // "return"
-  ND_IF,     // "if"
-  ND_FOR,    // "for"
-  ND_WHILE,  // "while"
-  ND_BLOCK,  // Block "{...}"
-  ND_VAR,    // Local variable
-  ND_NUM,    // Integer
+  ND_ADD,       // +
+  ND_SUB,       // -
+  ND_MUL,       // *
+  ND_DIV,       // /
+  ND_EQ,        // ==
+  ND_NE,        // !=
+  ND_LAT,       // >
+  ND_LET,       // <
+  ND_LAE,       // >=
+  ND_LEE,       // <=
+  ND_ASSIGN,    // =
+  ND_RETURN,    // "return"
+  ND_IF,        // "if"
+  ND_FOR,       // "for"
+  ND_WHILE,     // "while"
+  ND_BLOCK,     // Block "{...}"
+  ND_EXPR_STMT, // Expression statement
+  ND_VAR,       // Variable
+  ND_NUM,       // Integer
 } NodeKind;
 
 // AST Node

@@ -79,6 +79,10 @@ static void gen(Node *node) {
       printf("  mov rax, %s\n", reg(--top));
       printf("  jmp .L.return\n");
       return;
+    case ND_EXPR_STMT:
+      gen(node->lhs);
+      top--;
+      return;
     case ND_NUM:
       printf("  mov %s, %ld\n", reg(top++), node->val);
       return;
@@ -172,8 +176,7 @@ void codegen(Function *prog) {
 
   for (Node *n = prog->node; n; n = n->next) {
     gen(n);
-    // FIXME
-    // assert(top == 0);
+    assert(top == 0);
   }
 
   // Epilogue

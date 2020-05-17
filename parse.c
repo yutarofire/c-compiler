@@ -36,6 +36,12 @@ static Node *new_binary_node(NodeKind kind, Node *lhs, Node *rhs) {
   return node;
 }
 
+static Node *new_unary_node(NodeKind kind, Node *lhs) {
+  Node *node = new_node(kind);
+  node->lhs = lhs;
+  return node;
+}
+
 static Node *new_num_node(long val) {
   Node *node = new_node(ND_NUM);
   node->val = val;
@@ -96,8 +102,7 @@ static Node *program() {
 //      | expr ";"
 static Node *stmt() {
   if (consume("return")) {
-    Node *node = new_node(ND_RETURN);
-    node->lhs = expr();
+    Node *node = new_unary_node(ND_RETURN, expr());
     skip(";");
     return node;
   }
@@ -118,7 +123,7 @@ static Node *stmt() {
     skip("(");
 
     if (!equal(currentToken, ";"))
-      node->init = expr();
+      node->init = new_unary_node(ND_EXPR_STMT, expr());
     skip(";");
 
     if (!equal(currentToken, ";"))
@@ -126,7 +131,7 @@ static Node *stmt() {
     skip(";");
 
     if (!equal(currentToken, ")"))
-      node->inc = expr();
+      node->inc = new_unary_node(ND_EXPR_STMT, expr());
     skip(")");
 
     node->then = stmt();
@@ -154,7 +159,7 @@ static Node *stmt() {
     return node;
   }
 
-  Node *node = expr();
+  Node *node = new_unary_node(ND_EXPR_STMT, expr());
   skip(";");
   return node;
 }
