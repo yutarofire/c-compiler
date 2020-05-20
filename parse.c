@@ -248,7 +248,8 @@ static Node *unary() {
   return primary();
 }
 
-// primary = "(" expr ")" | ident | num
+// primary = "(" expr ")" | ident args? | num
+// args = "(" ")"
 static Node *primary() {
   if (consume("(")) {
     Node *node = expr();
@@ -257,6 +258,17 @@ static Node *primary() {
   }
 
   if (currentToken->kind == TK_IDENT) {
+    // Function call
+    if (equal(currentToken->next, "(")) {
+      Node *node = new_node(ND_FUNCALL);
+      node->funcname = strndup(currentToken->str, currentToken->len);
+      currentToken = currentToken->next;
+      skip("(");
+      skip(")");
+      return node;
+    }
+
+    // Variable
     Var *var = find_var(currentToken);
     if (!var)
       var = new_var(strndup(currentToken->str, currentToken->len));

@@ -60,6 +60,7 @@ typedef enum {
   ND_FOR,       // "for"
   ND_WHILE,     // "while"
   ND_BLOCK,     // Block "{...}"
+  ND_FUNCALL,   // Function call
   ND_EXPR_STMT, // Expression statement
   ND_VAR,       // Variable
   ND_NUM,       // Integer
@@ -74,9 +75,10 @@ struct Node {
   Node *lhs;  // Left-hand side
   Node *rhs;  // Right-hand side
 
-  Var *var;   // For ND_VAR
-  long val;   // For ND_NUM
-  Node *body; // For ND_BLOCK
+  Var *var;       // For ND_VAR
+  long val;       // For ND_NUM
+  Node *body;     // For ND_BLOCK
+  char *funcname; // For ND_FUNCALL
 
   // For control flows
   Node *init;
