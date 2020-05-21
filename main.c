@@ -18,8 +18,9 @@ int main(int argc, char **argv) {
  * for debugging
  */
 static void debug_token(Token *token) {
-  printf("=== TOKEN DEBUG ===\n");
+  int i = 0;
   for (Token *tk = token; tk; tk = tk->next) {
+    printf("=== TOKEN %d ===\n", i++);
     printf("kind: ");
     switch (tk->kind) {
       case TK_RESERVED:
@@ -42,7 +43,7 @@ static void debug_token(Token *token) {
     printf("str: \"%s\"\n", tk->str);
     printf("val: %ld\n", tk->val);
     printf("len: %d\n", tk->len);
-    printf("----------\n");
+    printf("\n");
   }
   exit(1);
 }
@@ -50,7 +51,7 @@ static void debug_token(Token *token) {
 static void debug_node(Node *node) {
   int i = 0;
   for (Node *nd = node; nd; nd = nd->lhs) {
-    printf("  == node %d == \n", i++);
+    printf("  == NODE %d == \n", i++);
     printf("    kind: ");
     switch (nd->kind) {
       case ND_ADD:
