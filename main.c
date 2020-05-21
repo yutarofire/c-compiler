@@ -1,6 +1,8 @@
 #include "9cc.h"
 
 static void debug_token(Token *token);
+static void debug_func(Function *func);
+// TODO: debug_node
 
 int main(int argc, char **argv) {
   if (argc != 2)
@@ -18,9 +20,9 @@ int main(int argc, char **argv) {
  */
 static void debug_token(Token *token) {
   printf("=== TOKEN DEBUG ===\n");
-  for (int i = 0; i < 100; i++) {
+  for (Token *tk = token; tk; tk = tk->next) {
     printf("kind: ");
-    switch (token->kind) {
+    switch (tk->kind) {
       case TK_RESERVED:
         printf("TK_RESERVED");
         break;
@@ -38,14 +40,20 @@ static void debug_token(Token *token) {
         break;
     }
     printf("\n");
-    printf("str: \"%s\"\n", token->str);
-    printf("val: %ld\n", token->val);
-    printf("len: %d\n", token->len);
-    token = token->next;
-    if (token->kind == TK_EOF)
-      break;
+    printf("str: \"%s\"\n", tk->str);
+    printf("val: %ld\n", tk->val);
+    printf("len: %d\n", tk->len);
     printf("----------\n");
   }
-  printf("==========\n");
+  exit(1);
+}
+
+static void debug_func(Function *func) {
+  printf("=== FUNCTION DEBUG ===\n");
+  for (Function *fn = func; fn; fn = fn->next) {
+    printf("name: \"%s\"\n", fn->name);
+    printf("stack_size: %d\n", fn->stack_size);
+    printf("----------\n");
+  }
   exit(1);
 }
