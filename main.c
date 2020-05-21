@@ -2,7 +2,6 @@
 
 static void debug_token(Token *token);
 static void debug_func(Function *func);
-// TODO: debug_node
 
 int main(int argc, char **argv) {
   if (argc != 2)
@@ -48,12 +47,86 @@ static void debug_token(Token *token) {
   exit(1);
 }
 
+static void debug_node(Node *node) {
+  int i = 0;
+  for (Node *nd = node; nd; nd = nd->lhs) {
+    printf("  == node %d == \n", i++);
+    printf("    kind: ");
+    switch (nd->kind) {
+      case ND_ADD:
+        printf("ND_ADD\n");
+        break;
+      case ND_SUB:
+        printf("ND_SUB\n");
+        break;
+      case ND_MUL:
+        printf("ND_MUL\n");
+        break;
+      case ND_DIV:
+        printf("ND_DIV\n");
+        break;
+      case ND_EQ:
+        printf("ND_EQ\n");
+        break;
+      case ND_NE:
+        printf("ND_NE\n");
+        break;
+      case ND_LAT:
+        printf("ND_LAT\n");
+        break;
+      case ND_LET:
+        printf("ND_LET\n");
+        break;
+      case ND_LAE:
+        printf("ND_LAE\n");
+        break;
+      case ND_LEE:
+        printf("ND_LEE\n");
+        break;
+      case ND_ASSIGN:
+        printf("ND_ASSIGN\n");
+        break;
+      case ND_RETURN:
+        printf("ND_RETURN\n");
+        break;
+      case ND_IF:
+        printf("ND_IF\n");
+        break;
+      case ND_FOR:
+        printf("ND_FOR\n");
+        break;
+      case ND_WHILE:
+        printf("ND_WHILE\n");
+        break;
+      case ND_BLOCK:
+        printf("ND_BLOCK\n");
+        break;
+      case ND_FUNCALL:
+        printf("ND_FUNCALL\n");
+        break;
+      case ND_EXPR_STMT:
+        printf("ND_EXPR_STMT\n");
+        break;
+      case ND_VAR:
+        printf("ND_VAR\n");
+        break;
+      case ND_NUM:
+        printf("ND_NUM\n");
+        printf("    val: %ld\n", nd->val);
+        break;
+    }
+  }
+}
+
 static void debug_func(Function *func) {
-  printf("=== FUNCTION DEBUG ===\n");
+  int i = 0;
   for (Function *fn = func; fn; fn = fn->next) {
+    printf("===== FUNCTION %d =====\n", i++);
     printf("name: \"%s\"\n", fn->name);
     printf("stack_size: %d\n", fn->stack_size);
-    printf("----------\n");
+    printf("nodes:\n");
+    debug_node(fn->node);
+    printf("\n");
   }
   exit(1);
 }
