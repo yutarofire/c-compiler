@@ -3,7 +3,7 @@
 static Token *currentToken;
 static Var *locals;
 
-static Node *program();
+static Function *program();
 static Node *stmt();
 static Node *expr();
 static Node *assign();
@@ -83,15 +83,32 @@ static void skip(char *op) {
     error_at(currentToken->str, "Not '%s'", op);
 }
 
+static int align_to(int n, int align) {
+  return (n + align - 1) & ~(align - 1);
+}
+
 // program = stmt*
-static Node *program() {
+static Function *program() {
   Node head = {};
   Node *cur = &head;
 
   while (currentToken->kind != TK_EOF)
     cur = cur->next = stmt();
 
-  return head.next;
+  Function *prog = calloc(1, sizeof(Function));
+  prog->node = head.next;
+
+  // Assign offsets to local variables.
+  int offset = 32; // 32 for callee-saved registers
+  for (Var *var = locals; var; var = var->next) {
+    offset += 8;
+    var->offset = offset;
+  }
+
+  prog->locals = locals;
+  prog->stack_size = align_to(offset, 16);
+
+  return prog;
 }
 
 // stmt = "return" expr ";"
@@ -287,29 +304,12 @@ static Node *primary() {
   error_at(currentToken->str, "unexpected token");
 }
 
-static int align_to(int n, int align) {
-  return (n + align - 1) & ~(align - 1);
-}
-
 Function *parse(Token *token) {
   currentToken = token;
-  Node *node = program();
+  Function *prog = program();
 
   if (currentToken->kind != TK_EOF)
     error_at(currentToken->str, "extra token");
-
-  Function *prog = calloc(1, sizeof(Function));
-  prog->node = node;
-
-  // Assign offsets to local variables.
-  int offset = 32; // 32 for callee-saved registers
-  for (Var *var = locals; var; var = var->next) {
-    offset += 8;
-    var->offset = offset;
-  }
-
-  prog->locals = locals;
-  prog->stack_size = align_to(offset, 16);
 
   return prog;
 }
