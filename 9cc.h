@@ -90,6 +90,8 @@ struct Node {
 
 typedef struct Function Function;
 struct Function {
+  Function *next;
+  char *name;
   Node *node;
   Var *locals;
   int stack_size;

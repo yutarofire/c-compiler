@@ -1,9 +1,11 @@
 #include "9cc.h"
 
-static Token *currentToken;
+static Token *current_token;
 static Var *locals;
 
 static Function *program();
+static Function *funcdef();
+static Node *compound_stmt();
 static Node *stmt();
 static Node *expr();
 static Node *assign();
@@ -70,9 +72,9 @@ static bool equal(Token *token, char *op) {
 // 次のtokenが期待しているcharのとき、tokenを1つ進めて
 // trueを返す。それ以外はfalseを返す。
 static bool consume(char *op) {
-  if (!equal(currentToken, op))
+  if (!equal(current_token, op))
     return false;
-  currentToken = currentToken->next;
+  current_token = current_token->next;
   return true;
 }
 
@@ -80,35 +82,59 @@ static void skip(char *op) {
   if (consume(op))
     return;
   else
-    error_at(currentToken->str, "Not '%s'", op);
+    error_at(current_token->str, "Not '%s'", op);
 }
 
 static int align_to(int n, int align) {
   return (n + align - 1) & ~(align - 1);
 }
 
-// program = stmt*
+// program = funcdef*
 static Function *program() {
-  Node head = {};
-  Node *cur = &head;
+  Function head = {};
+  Function *cur = &head;
 
-  while (currentToken->kind != TK_EOF)
-    cur = cur->next = stmt();
-
-  Function *prog = calloc(1, sizeof(Function));
-  prog->node = head.next;
+  while (current_token->kind != TK_EOF)
+    cur = cur->next = funcdef();
 
   // Assign offsets to local variables.
-  int offset = 32; // 32 for callee-saved registers
-  for (Var *var = locals; var; var = var->next) {
-    offset += 8;
-    var->offset = offset;
+  for (Function *fn = head.next; fn; fn = fn->next) {
+    int offset = 32; // 32 for callee-saved registers
+    for (Var *var = locals; var; var = var->next) {
+      offset += 8;
+      var->offset = offset;
+    }
+    fn->stack_size = align_to(offset, 16);
   }
 
-  prog->locals = locals;
-  prog->stack_size = align_to(offset, 16);
+  return head.next;
+}
 
-  return prog;
+// funcdef = funcname "{" stmt* "}"
+static Function *funcdef() {
+  locals = NULL;
+  Function *fn = calloc(1, sizeof(Function));
+
+  fn->name = strndup(current_token->str, current_token->len);
+  current_token = current_token->next;
+
+  skip("(");
+  skip(")");
+  skip("{");
+
+  // compound_stmt
+  Node head = {};
+  Node *cur = &head;
+  while (!equal(current_token, "}"))
+    cur = cur->next = stmt();
+  Node *block_node = new_node(ND_BLOCK);
+  block_node->body = head.next;
+
+  fn->node = block_node;
+  fn->locals = locals;
+
+  skip("}");
+  return fn;
 }
 
 // stmt = "return" expr ";"
@@ -139,15 +165,15 @@ static Node *stmt() {
     Node *node = new_node(ND_FOR);
     skip("(");
 
-    if (!equal(currentToken, ";"))
+    if (!equal(current_token, ";"))
       node->init = new_unary_node(ND_EXPR_STMT, expr());
     skip(";");
 
-    if (!equal(currentToken, ";"))
+    if (!equal(current_token, ";"))
       node->cond = expr();
     skip(";");
 
-    if (!equal(currentToken, ")"))
+    if (!equal(current_token, ")"))
       node->inc = new_unary_node(ND_EXPR_STMT, expr());
     skip(")");
 
@@ -274,42 +300,42 @@ static Node *primary() {
     return node;
   }
 
-  if (currentToken->kind == TK_IDENT) {
+  if (current_token->kind == TK_IDENT) {
     // Function call
-    if (equal(currentToken->next, "(")) {
+    if (equal(current_token->next, "(")) {
       Node *node = new_node(ND_FUNCALL);
-      node->funcname = strndup(currentToken->str, currentToken->len);
-      currentToken = currentToken->next;
+      node->funcname = strndup(current_token->str, current_token->len);
+      current_token = current_token->next;
       skip("(");
       skip(")");
       return node;
     }
 
     // Variable
-    Var *var = find_var(currentToken);
+    Var *var = find_var(current_token);
     if (!var)
-      var = new_var(strndup(currentToken->str, currentToken->len));
+      var = new_var(strndup(current_token->str, current_token->len));
     Node *node = new_node(ND_VAR);
     node->var = var;
-    currentToken = currentToken->next;
+    current_token = current_token->next;
     return node;
   }
 
-  if (currentToken->kind == TK_NUM) {
-    Node *node = new_num_node(get_number(currentToken));
-    currentToken = currentToken->next;
+  if (current_token->kind == TK_NUM) {
+    Node *node = new_num_node(get_number(current_token));
+    current_token = current_token->next;
     return node;
   }
 
-  error_at(currentToken->str, "unexpected token");
+  error_at(current_token->str, "unexpected token");
 }
 
 Function *parse(Token *token) {
-  currentToken = token;
+  current_token = token;
   Function *prog = program();
 
-  if (currentToken->kind != TK_EOF)
-    error_at(currentToken->str, "extra token");
+  if (current_token->kind != TK_EOF)
+    error_at(current_token->str, "extra token");
 
   return prog;
 }
