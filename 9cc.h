@@ -101,3 +101,7 @@ Function *parse(Token *token);
  * codegen.c
  */
 void codegen(Function *prog);
+
+// Debugger
+void debug_token(Token *token);
+void debug_func(Function *func);

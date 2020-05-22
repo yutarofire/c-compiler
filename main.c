@@ -1,8 +1,5 @@
 #include "9cc.h"
 
-static void debug_token(Token *token);
-static void debug_func(Function *func);
-
 int main(int argc, char **argv) {
   if (argc != 2)
     error("%s: wrong number of arguments", argv[0]);
@@ -17,7 +14,7 @@ int main(int argc, char **argv) {
 /*
  * for debugging
  */
-static void debug_token(Token *token) {
+void debug_token(Token *token) {
   int i = 0;
   for (Token *tk = token; tk; tk = tk->next) {
     printf("=== TOKEN %d ===\n", i++);
@@ -48,7 +45,7 @@ static void debug_token(Token *token) {
   exit(1);
 }
 
-static void debug_node(Node *node) {
+void debug_node(Node *node) {
   int i = 0;
   for (Node *nd = node; nd; nd = nd->lhs) {
     printf("  == NODE %d == \n", i++);
@@ -119,7 +116,7 @@ static void debug_node(Node *node) {
   }
 }
 
-static void debug_func(Function *func) {
+void debug_func(Function *func) {
   int i = 0;
   for (Function *fn = func; fn; fn = fn->next) {
     printf("===== FUNCTION %d =====\n", i++);
