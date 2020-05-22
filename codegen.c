@@ -3,6 +3,7 @@
 static int top;
 static int labelseq = 1;
 static Function *current_func;
+static char *argreg[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
 static char *reg(int idx) {
   char *r[] = {"r10", "r11", "r12", "r13", "r14", "r15"};
@@ -37,15 +38,20 @@ static void gen_expr(Node *node) {
       // Right-hand value remains on top of reg.
       top--;
       return;
-    case ND_FUNCALL:
+    case ND_FUNCALL: {
+      int i = 0;
+      for (Node *arg = node->args; arg; arg = arg->next)
+        printf("  mov %s, %ld\n", argreg[i++], arg->val);
+
       printf("  push r10\n");
       printf("  push r11\n");
       printf("  mov rax, 0\n");
       printf("  call %s\n", node->funcname);
       printf("  mov %s, rax\n", reg(top++));
-      printf("  push r11\n");
-      printf("  push r10\n");
+      printf("  push r11\n"); // FIXME
+      printf("  push r10\n"); // FIXME
       return;
+    }
   }
 
   gen_expr(node->lhs);

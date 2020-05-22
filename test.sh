@@ -2,6 +2,11 @@
 cat <<EOF | gcc -xc -c -o tmp2.o -
 int ret3() { return 3; }
 int ret5() { return 5; }
+int add(int x, int y) { return x+y; }
+int sub(int x, int y) { return x-y; }
+int add6(int a, int b, int c, int d, int e, int f) {
+  return a+b+c+d+e+f;
+}
 EOF
 
 assert() {
@@ -15,9 +20,9 @@ assert() {
   rm tmp.s tmp
 
   if [ "$actual" = "$expected" ]; then
-    echo "\"$input\" => $actual"
+    echo "'$input' => $actual"
   else
-    echo "\"$input\" => $expected expected, but got $actual"
+    echo "'$input' => $expected expected, but got $actual"
     exit 1
   fi
 }
@@ -80,6 +85,9 @@ assert 12 'main() { if (0) { x=10; return x; } else {} return 12; }'
 
 assert 3 'main() { return ret3(); }'
 assert 5 'main() { return ret5(); }'
+assert 4 'main() { return add(1, 3); }'
+assert 2 'main() { return sub(3, 1); }'
+assert 21 'main() { return add6(1,2,3,4,5,6); }'
 
 assert 42 'main() { return ret42(); } ret42() { return 42; }'
 

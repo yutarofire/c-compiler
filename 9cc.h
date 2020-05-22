@@ -22,7 +22,7 @@ typedef struct Token Token;
 struct Token {
   TokenKind kind;
   Token *next;
-  long val;  // If TK_NUM, number value
+  long val;  // For TK_NUM, number value
   char *str; // Rested string
   int len;   // Token length
 };
@@ -78,9 +78,12 @@ struct Node {
   Var *var;       // For ND_VAR
   long val;       // For ND_NUM
   Node *body;     // For ND_BLOCK
-  char *funcname; // For ND_FUNCALL
 
-  // For control flows
+  // Function call
+  char *funcname;
+  Node *args;
+
+  // Control flows
   Node *init;
   Node *cond;
   Node *inc;

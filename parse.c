@@ -292,8 +292,22 @@ static Node *unary() {
   return primary();
 }
 
+static Node *func_args() {
+  Node head = {};
+  Node *cur = &head;
+
+  while (!equal(current_token, ")")) {
+    if (cur != &head)
+      skip(",");
+    cur = cur->next = new_num_node(current_token->val);
+    current_token = current_token->next;
+  }
+
+  return head.next;
+}
+
 // primary = "(" expr ")" | ident args? | num
-// args = "(" ")"
+// args = "(" func-args? ")"
 static Node *primary() {
   if (consume("(")) {
     Node *node = expr();
@@ -304,12 +318,16 @@ static Node *primary() {
   if (current_token->kind == TK_IDENT) {
     // Function call
     if (equal(current_token->next, "(")) {
-      Node *node = new_node(ND_FUNCALL);
-      node->funcname = strndup(current_token->str, current_token->len);
+      Node *funcall_node = new_node(ND_FUNCALL);
+      funcall_node->funcname = strndup(current_token->str, current_token->len);
       current_token = current_token->next;
       skip("(");
+
+      Node *args = func_args();
+      funcall_node->args = args;
+
       skip(")");
-      return node;
+      return funcall_node;
     }
 
     // Variable
