@@ -92,6 +92,7 @@ assert 21 'main() { return add6(1,2,3,4,5,6); }'
 assert 42 'main() { return ret42(); } ret42() { return 42; }'
 assert 5 'main() { return plus3(2); } plus3(x) { return x+3; }'
 assert 12 'main() { return mul(3,4); } mul(x, y) { return x*y; }'
+assert 12 'main() { return mul(1+2,4); } mul(x, y) { return x*y; }'
 assert 192 'main() { return mul6(3,4,1,1,2,8); } mul6(a,b,c,d,e,f) { return a*b*c*d*e*f; }'
 
 echo OK

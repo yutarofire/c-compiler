@@ -110,6 +110,7 @@ static Function *program() {
   return head.next;
 }
 
+// func_params = expr*
 static void *func_params() {
   int i = 0;
   while (!equal(current_token, ")")) {
@@ -318,8 +319,7 @@ static Node *func_args() {
   while (!equal(current_token, ")")) {
     if (cur != &head)
       skip(",");
-    cur = cur->next = new_num_node(current_token->val);
-    current_token = current_token->next;
+    cur = cur->next = expr();
   }
 
   return head.next;

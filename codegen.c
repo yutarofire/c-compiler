@@ -40,8 +40,10 @@ static void gen_expr(Node *node) {
       return;
     case ND_FUNCALL: {
       int i = 0;
-      for (Node *arg = node->args; arg; arg = arg->next)
-        printf("  mov %s, %ld\n", argreg[i++], arg->val);
+      for (Node *arg = node->args; arg; arg = arg->next) {
+        gen_expr(arg);
+        printf("  mov %s, %s\n", argreg[i++], reg(--top));
+      }
 
       printf("  push r10\n");
       printf("  push r11\n");
