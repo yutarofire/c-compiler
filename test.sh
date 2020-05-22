@@ -96,4 +96,11 @@ assert 12 'main() { return mul(1+2,4); } mul(x, y) { return x*y; }'
 assert 192 'main() { return mul6(3,4,1,1,2,8); } mul6(a,b,c,d,e,f) { return a*b*c*d*e*f; }'
 assert 144 'main() { return fib(12); } fib(n) { if (n==0) return 0; if (n==1) return 1; return fib(n-2)+fib(n-1); }'
 
+assert 3 'main() { x=3; return *&x; }'
+assert 3 'main() { x=3; y=&x; z=&y; return **z; }'
+assert 5 'main() { x=3; y=5; z=&x+8; return *z; }'
+assert 3 'main() { x=3; y=5; return *(&y-8); }'
+assert 5 'main() { x=3; y=&x; *y=5; return x; }'
+assert 7 'main() { x=3; y=5; return *(&y-8)=7; return x; }'
+
 echo OK

@@ -5,6 +5,8 @@ static int labelseq = 1;
 static Function *current_func;
 static char *argreg[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
+static void gen_expr();
+
 static char *reg(int idx) {
   char *r[] = {"r10", "r11", "r12", "r13", "r14", "r15"};
   if (idx < 0 || sizeof(r) / sizeof(*r) <= idx)
@@ -14,10 +16,16 @@ static char *reg(int idx) {
 
 // Pushes the given node's address to the stack.
 static void gen_var(Node *node) {
-  if (node->kind != ND_VAR)
-    error("expected a variable");
+  switch (node->kind) {
+    case ND_VAR:
+      printf("  lea %s, [rbp-%d]\n", reg(top++), node->var->offset);
+      return;
+    case ND_DEREF:
+      gen_expr(node->lhs);
+      return;
+  }
 
-  printf("  lea %s, [rbp-%d]\n", reg(top++), node->var->offset);
+  error("expected a variable or dereferencer");
 }
 
 static void gen_expr(Node *node) {
@@ -30,6 +38,13 @@ static void gen_expr(Node *node) {
       // Fetch value of variable by its address,
       // and load it onto register.
       printf("  mov %s, [%s]\n", reg(top - 1), reg(top - 1));
+      return;
+    case ND_DEREF:
+      gen_expr(node->lhs);
+      printf("  mov %s, [%s]\n", reg(top - 1), reg(top - 1));
+      return;
+    case ND_ADDR:
+      gen_var(node->lhs);
       return;
     case ND_ASSIGN:
       gen_expr(node->rhs);

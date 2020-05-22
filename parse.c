@@ -301,13 +301,20 @@ static Node *mul() {
   }
 }
 
-// unary = ("+" | "-")? primary
+// unary = ("+" | "-" | "*" | "&") unary
+//       | primary
 static Node *unary() {
   if (consume("+"))
-    return primary();
+    return unary();
 
   if (consume("-"))
-    return new_binary_node(ND_SUB, new_num_node(0), primary());
+    return new_binary_node(ND_SUB, new_num_node(0), unary());
+
+  if (consume("*"))
+    return new_unary_node(ND_DEREF, unary());
+
+  if (consume("&"))
+    return new_unary_node(ND_ADDR, unary());
 
   return primary();
 }
