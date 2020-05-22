@@ -110,7 +110,28 @@ static Function *program() {
   return head.next;
 }
 
-// funcdef = funcname "{" stmt* "}"
+static void *func_params() {
+  int i = 0;
+  while (!equal(current_token, ")")) {
+    if (i != 0)
+      skip(",");
+    if (current_token->kind != TK_IDENT)
+      error_at(current_token->str, "expected identifier");
+    new_var(strndup(current_token->str, current_token->len));
+    current_token = current_token->next;
+    i++;
+  }
+}
+
+static Node *definition_block_body() {
+  Node head = {};
+  Node *cur = &head;
+  while (!equal(current_token, "}"))
+    cur = cur->next = stmt();
+  return head.next;
+}
+
+// funcdef = func-name "(" func-params ")" "{" stmt* "}"
 static Function *funcdef() {
   locals = NULL;
   Function *fn = calloc(1, sizeof(Function));
@@ -118,22 +139,20 @@ static Function *funcdef() {
   fn->name = strndup(current_token->str, current_token->len);
   current_token = current_token->next;
 
+  // Params
   skip("(");
+  func_params();
+  fn->params = locals;
   skip(")");
+
+  // Body
   skip("{");
-
-  // compound_stmt
-  Node head = {};
-  Node *cur = &head;
-  while (!equal(current_token, "}"))
-    cur = cur->next = stmt();
-  skip("}");
-
+  Node *body = definition_block_body();
   Node *block_node = new_node(ND_BLOCK);
-  block_node->body = head.next;
-
+  block_node->body = body;
   fn->node = block_node;
   fn->locals = locals;
+  skip("}");
 
   return fn;
 }
