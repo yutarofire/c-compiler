@@ -127,13 +127,14 @@ static Function *funcdef() {
   Node *cur = &head;
   while (!equal(current_token, "}"))
     cur = cur->next = stmt();
+  skip("}");
+
   Node *block_node = new_node(ND_BLOCK);
   block_node->body = head.next;
 
   fn->node = block_node;
   fn->locals = locals;
 
-  skip("}");
   return fn;
 }
 
