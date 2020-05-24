@@ -123,15 +123,53 @@ static void *func_params() {
   }
 }
 
-static Node *definition_block_body() {
+// typespec = "int"
+static void *typespec() {
+  skip("int");
+}
+
+// declarator = ident
+static Node *declarator() {
+  if (current_token->kind != TK_IDENT)
+    error_at(current_token->str, "expected a variable name");
+
+  Var *var = new_var(strndup(current_token->str, current_token->len));
+  Node *node = new_node(ND_VAR);
+  node->var = var;
+  current_token = current_token->next;
+
+  return node;
+}
+
+// declaration = typespec declarator ("=" expr)? ";"
+static Node *declaration() {
+  typespec();
+  Node *var_node = declarator();
+
+  if (consume("=")) {
+    Node *assign_node = new_binary_node(ND_ASSIGN, var_node, expr());
+    skip(";");
+    return new_unary_node(ND_EXPR_STMT, assign_node);
+  }
+
+  skip(";");
+  return new_unary_node(ND_EXPR_STMT, var_node);
+}
+
+// compound_stmt = (declaration | stmt)*
+static Node *compound_stmt() {
   Node head = {};
   Node *cur = &head;
-  while (!equal(current_token, "}"))
-    cur = cur->next = stmt();
+  while (!equal(current_token, "}")) {
+    if (equal(current_token, "int"))
+      cur = cur->next = declaration();
+    else
+      cur = cur->next = stmt();
+  }
   return head.next;
 }
 
-// funcdef = func-name "(" func-params ")" "{" stmt* "}"
+// funcdef = func-name "(" func-params ")" "{" compound_stmt "}"
 static Function *funcdef() {
   locals = NULL;
   Function *fn = calloc(1, sizeof(Function));
@@ -147,9 +185,8 @@ static Function *funcdef() {
 
   // Body
   skip("{");
-  Node *body = definition_block_body();
   Node *block_node = new_node(ND_BLOCK);
-  block_node->body = body;
+  block_node->body = compound_stmt();
   fn->node = block_node;
   fn->locals = locals;
   skip("}");
@@ -186,8 +223,9 @@ static Node *stmt() {
     skip("(");
 
     if (!equal(current_token, ";"))
-      node->init = new_unary_node(ND_EXPR_STMT, expr());
-    skip(";");
+      node->init = declaration();
+    else
+      skip(";");
 
     if (!equal(current_token, ";"))
       node->cond = expr();
@@ -211,14 +249,9 @@ static Node *stmt() {
   }
 
   if (consume("{")) {
-    Node head = {};
-    Node *cur = &head;
-
-    while (!consume("}"))
-      cur = cur->next = stmt();
-
     Node *node = new_node(ND_BLOCK);
-    node->body = head.next;
+    node->body = compound_stmt();
+    skip("}");
     return node;
   }
 
@@ -407,7 +440,7 @@ static Node *primary() {
     // Variable
     Var *var = find_var(current_token);
     if (!var)
-      var = new_var(strndup(current_token->str, current_token->len));
+      error_at(current_token->str, "undefined variable");
     Node *node = new_node(ND_VAR);
     node->var = var;
     current_token = current_token->next;
