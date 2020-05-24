@@ -1,5 +1,14 @@
 #include "9cc.h"
 
+Type *type_int = &(Type){TY_INT};
+
+Type *pointer_to(Type *base) {
+  Type *ty = calloc(1, sizeof(Type));
+  ty->kind = TY_PTR;
+  ty->base = base;
+  return ty;
+}
+
 void add_type(Node *node) {
   if (!node || node->type)
     return;
@@ -17,17 +26,11 @@ void add_type(Node *node) {
     }
     case ND_FUNCALL:
     case ND_VAR:
-    case ND_NUM: {
-      Type *type = calloc(1, sizeof(Type));
-      type->kind = TY_INT;
-      node->type = type;
+    case ND_NUM:
+      node->type = type_int;
       return;
-    }
     case ND_ADDR: {
-      Type *type = calloc(1, sizeof(Type));
-      type->kind = TY_PTR;
-      type->base = node->lhs->type;
-      node->type = type;
+      node->type = pointer_to(node->lhs->type);
       return;
     }
   }

@@ -42,6 +42,7 @@ typedef struct Var Var;
 struct Var {
   Var *next;
   char *name;
+  Type *type;
   int offset; // Offset from RBForP
 };
 
@@ -122,6 +123,8 @@ struct Type {
   Type *base;
 };
 
+extern Type *type_int;
+Type *pointer_to(Type *base);
 void add_type(Node *node);
 
 /*

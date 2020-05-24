@@ -101,10 +101,10 @@ assert 192 'int main() { return mul6(3,4,1,1,2,8); } int mul6(int a, int b, int 
 assert 144 'int main() { return fib(12); } int fib(int n) { if (n==0) return 0; if (n==1) return 1; return fib(n-2)+fib(n-1); }'
 
 assert 3 'int main() { int x=3; return *&x; }'
-assert 3 'int main() { int x=3; int y=&x; int z=&y; return **z; }'
-assert 5 'int main() { int x=3; int y=&x; *y=5; return x; }'
+assert 3 'int main() { int x=3; int *y=&x; int **z=&y; return **z; }'
+assert 5 'int main() { int x=3; int *y=&x; *y=5; return x; }'
 
-assert 5 'int main() { int x=3; int y=5; int z=&x+1; return *z; }'
+assert 5 'int main() { int x=3; int y=5; int *z=&x+1; return *z; }'
 assert 5 'int main() { int x=3; int y=5; return *(&x+1); }'
 assert 3 'int main() { int x=3; int y=5; return *(&y-1); }'
 assert 7 'int main() { int x=3; int y=5; *(&y-1)=7; return x; }'

@@ -5,7 +5,7 @@ static Var *locals;
 
 static Function *program();
 static Function *funcdef();
-static void typespec();
+static Type *typespec();
 static Node *stmt();
 static Node *expr();
 static Node *assign();
@@ -50,10 +50,11 @@ static Node *new_num_node(long val) {
   return node;
 }
 
-static Var *new_var(char *name) {
+static Var *new_lvar(char *name, Type *type) {
   Var *var = calloc(1, sizeof(Var));
   var->name = name;
   var->next = locals;
+  var->type = type;
   locals = var;
   return var;
 }
@@ -116,26 +117,30 @@ static void func_params() {
   while (!equal(current_token, ")")) {
     if (i != 0)
       skip(",");
-    typespec();
+    Type *ty = typespec();
     if (current_token->kind != TK_IDENT)
       error_at(current_token->str, "expected an argument name");
-    new_var(strndup(current_token->str, current_token->len));
+    new_lvar(strndup(current_token->str, current_token->len), ty);
     current_token = current_token->next;
     i++;
   }
 }
 
 // typespec = "int"
-static void typespec() {
+static Type *typespec() {
   skip("int");
+  return type_int;
 }
 
-// declarator = ident
-static Node *declarator() {
+// declarator = "*"* ident
+static Node *declarator(Type *type) {
+  while (consume("*"))
+    type = pointer_to(type);
+
   if (current_token->kind != TK_IDENT)
     error_at(current_token->str, "expected a variable name");
 
-  Var *var = new_var(strndup(current_token->str, current_token->len));
+  Var *var = new_lvar(strndup(current_token->str, current_token->len), type);
   Node *node = new_node(ND_VAR);
   node->var = var;
   current_token = current_token->next;
@@ -145,8 +150,8 @@ static Node *declarator() {
 
 // declaration = typespec declarator ("=" expr)? ";"
 static Node *declaration() {
-  typespec();
-  Node *var_node = declarator();
+  Type *type = typespec();
+  Node *var_node = declarator(type);
 
   if (consume("=")) {
     Node *assign_node = new_binary_node(ND_ASSIGN, var_node, expr());
