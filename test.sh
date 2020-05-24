@@ -36,7 +36,10 @@ assert 38 'main() { return 22 +4+ 12; }'
 assert 18 'main() { return 22 - 4; }'
 assert 30 'main() { return 36 +4 - 10; }'
 assert 99 'main() { return  102- 5 + 2; }'
-assert 7 'main() { return 1 + 2 * 3; }'
+assert 6 'main() { return 2*3; }'
+assert 4 'main() { return 8/2; }'
+assert 7 'main() { return 1+2*3; }'
+assert 5 'main() { return 1+8/2; }'
 assert 4 'main() { return (3+5)/2; }'
 assert 4 'main() { return (3+6)/2; }'
 assert 9 'main() { return (1 + 2) * 3; }'
@@ -98,9 +101,13 @@ assert 144 'main() { return fib(12); } fib(n) { if (n==0) return 0; if (n==1) re
 
 assert 3 'main() { x=3; return *&x; }'
 assert 3 'main() { x=3; y=&x; z=&y; return **z; }'
-assert 5 'main() { x=3; y=5; z=&x+8; return *z; }'
-assert 3 'main() { x=3; y=5; return *(&y-8); }'
 assert 5 'main() { x=3; y=&x; *y=5; return x; }'
-assert 7 'main() { x=3; y=5; return *(&y-8)=7; return x; }'
+
+assert 5 'main() { x=3; y=5; z=&x+1; return *z; }'
+assert 5 'main() { x=3; y=5; return *(&x+1); }'
+assert 3 'main() { x=3; y=5; return *(&y-1); }'
+assert 7 'main() { x=3; y=5; *(&y-1)=7; return x; }'
+assert 7 'main() { x=3; y=5; *(&x+1)=7; return y; }'
+assert 2 'main() { x=3; return (&x+2)-&x; }'
 
 echo OK

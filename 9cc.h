@@ -7,6 +7,8 @@
 #include <string.h>
 #include <assert.h>
 
+typedef struct Type Type;
+
 /*
  * tokenize.c
  */
@@ -73,6 +75,7 @@ typedef struct Node Node;
 struct Node {
   NodeKind kind;
   Node *next;
+  Type *type;
 
   Node *lhs;  // Left-hand side
   Node *rhs;  // Right-hand side
@@ -105,6 +108,21 @@ struct Function {
 };
 
 Function *parse(Token *token);
+
+/*
+ * type.c
+ */
+typedef enum {
+  TY_INT,
+  TY_PTR,
+} TypeKind;
+
+struct Type {
+  TypeKind kind;
+  Type *base;
+};
+
+void add_type(Node *node);
 
 /*
  * codegen.c

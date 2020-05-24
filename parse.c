@@ -5,7 +5,6 @@ static Var *locals;
 
 static Function *program();
 static Function *funcdef();
-static Node *compound_stmt();
 static Node *stmt();
 static Node *expr();
 static Node *assign();
@@ -273,15 +272,64 @@ static Node *relational() {
   }
 }
 
+static Node *new_add_node(Node *lhs, Node *rhs) {
+  add_type(lhs);
+  add_type(rhs);
+
+  // num + num
+  if (lhs->type->kind == TY_INT && rhs->type->kind == TY_INT)
+    return new_binary_node(ND_ADD, lhs, rhs);
+
+  // ptr + num
+  if (lhs->type->kind == TY_PTR && rhs->type->kind == TY_INT) {
+    return new_binary_node(
+        ND_ADD,
+        lhs,
+        new_binary_node(ND_MUL, rhs, new_num_node(8))
+    );
+  }
+
+  error_at(current_token->str, "invalid operand of \"+\"");
+}
+
+static Node *new_sub_node(Node *lhs, Node *rhs) {
+  add_type(lhs);
+  add_type(rhs);
+
+  // num - num
+  if (lhs->type->kind == TY_INT && rhs->type->kind == TY_INT)
+    return new_binary_node(ND_SUB, lhs, rhs);
+
+  // ptr - num
+  if (lhs->type->kind == TY_PTR && rhs->type->kind == TY_INT) {
+    return new_binary_node(
+        ND_SUB,
+        lhs,
+        new_binary_node(ND_MUL, rhs, new_num_node(8))
+    );
+  }
+
+  // ptr - ptr
+  if (lhs->type->kind == TY_PTR && rhs->type->kind == TY_PTR) {
+    return new_binary_node(
+        ND_DIV,
+        new_binary_node(ND_SUB, lhs, rhs),
+        new_num_node(8)
+    );
+  }
+
+  error_at(current_token->str, "invalid operand of \"-\"");
+}
+
 // add = mul ("+" mul | "-" mul)*
 static Node *add(){
   Node *node = mul();
 
   for (;;) {
     if (consume("+"))
-      node = new_binary_node(ND_ADD, node, mul());
+      node = new_add_node(node, mul());
     else if (consume("-"))
-      node = new_binary_node(ND_SUB, node, mul());
+      node = new_sub_node(node, mul());
     else
       return node;
   }
