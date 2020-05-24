@@ -20,14 +20,24 @@ void add_type(Node *node) {
     case ND_ADD:
     case ND_SUB:
     case ND_MUL:
-    case ND_DIV: {
+    case ND_DIV:
+    case ND_EXPR_STMT:
+    case ND_RETURN: {
       node->type = node->lhs->type;
       return;
     }
     case ND_FUNCALL:
-    case ND_VAR:
+    case ND_EQ:
+    case ND_NE:
+    case ND_LAT:
+    case ND_LET:
+    case ND_LAE:
+    case ND_LEE:
     case ND_NUM:
       node->type = type_int;
+      return;
+    case ND_VAR:
+      node->type = node->var->type;
       return;
     case ND_ADDR: {
       node->type = pointer_to(node->lhs->type);

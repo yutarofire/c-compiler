@@ -389,6 +389,7 @@ static Node *mul() {
 }
 
 // unary = ("+" | "-" | "*" | "&") unary
+//       | "sizeof" unary
 //       | primary
 static Node *unary() {
   if (consume("+"))
@@ -402,6 +403,19 @@ static Node *unary() {
 
   if (consume("&"))
     return new_unary_node(ND_ADDR, unary());
+
+  if (consume("sizeof")) {
+    Node *node = unary();
+    add_type(node);
+    switch (node->type->kind) {
+      case TY_INT:
+        return new_num_node(4);
+      case TY_PTR:
+        return new_num_node(8);
+      default:
+        error_at(current_token->str, "invalud type for \"sizeof\"");
+    }
+  }
 
   return primary();
 }

@@ -107,6 +107,12 @@ Token *tokenize(char *p) {
       continue;
     }
 
+    if (starts_with(p, "sizeof") && !is_alnum(p[6])) {
+      cur = new_token(TK_RESERVED, cur, p, 6);
+      p += 6;
+      continue;
+    }
+
     // Identifier
     if (isalpha(*p)) {
       char *q = p++;
