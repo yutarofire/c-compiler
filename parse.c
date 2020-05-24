@@ -6,6 +6,7 @@ static Var *locals;
 static Function *program();
 static Function *funcdef();
 static Type *typespec();
+static Node *declarator(Type *type);
 static Node *stmt();
 static Node *expr();
 static Node *assign();
@@ -111,17 +112,14 @@ static Function *program() {
   return head.next;
 }
 
-// func_params = typespec expr ("," typespec expr)*
+// func_params = typespec declarator ("," typespec declarator)*
 static void func_params() {
   int i = 0;
   while (!equal(current_token, ")")) {
     if (i != 0)
       skip(",");
-    Type *ty = typespec();
-    if (current_token->kind != TK_IDENT)
-      error_at(current_token->str, "expected an argument name");
-    new_lvar(strndup(current_token->str, current_token->len), ty);
-    current_token = current_token->next;
+    Type *type = typespec();
+    declarator(type);
     i++;
   }
 }
@@ -176,7 +174,7 @@ static Node *compound_stmt() {
   return head.next;
 }
 
-// funcdef = typespec func-name "(" func-params ")" "{" compound_stmt "}"
+// funcdef = typespec func-name "(" func_params ")" "{" compound_stmt "}"
 static Function *funcdef() {
   locals = NULL;
   Function *fn = calloc(1, sizeof(Function));
