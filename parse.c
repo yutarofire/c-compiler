@@ -6,7 +6,10 @@ static Var *locals;
 static Function *program();
 static Function *funcdef();
 static Type *typespec();
+static void func_params();
 static Node *declarator(Type *type);
+static Node *compound_stmt();
+static Node *declaration();
 static Node *stmt();
 static Node *expr();
 static Node *assign();
@@ -16,6 +19,33 @@ static Node *add();
 static Node *mul();
 static Node *unary();
 static Node *primary();
+
+/*
+ * Production rules:
+ *   program = funcdef*
+ *   funcdef = typespec func_name "(" func_params ")" "{" compound_stmt "}"
+ *   typespec = "int"
+ *   func_params = typespec declarator ("," typespec declarator)*
+ *   declarator = "*"* ident
+ *   compound_stmt = (declaration | stmt)*
+ *   declaration = typespec declarator ("=" expr)? ";"
+ *   stmt = "return" expr ";"
+ *        | "if" "(" expr ")" stmt ("else" stmt)?
+ *        | "for" "(" expr? ";" expr? ";" expr? ")" stmt
+ *        | "while" "(" expr ")" stmt
+ *        | "{" stmt* "}"
+ *        | expr ";"
+ *   expr = assign
+ *   assign = equality ("=" assign)?
+ *   equality = relational ("==" relational | "!=" relational)*
+ *   relational = add ("<" add | "<=" add | ">=" add | ">" add)*
+ *   add = mul ("+" mul | "-" mul)*
+ *   mul = unary ("*" unary | "/" unary)*
+ *   unary = ("+" | "-" | "*" | "&") unary
+ *         | "sizeof" unary
+ *         | primary
+ *   primary = "(" expr ")" | ident ("(" func_args? ")")? | num
+ */
 
 // Find local variable by name.
 static Var *find_var(Token *token) {
@@ -174,7 +204,7 @@ static Node *compound_stmt() {
   return head.next;
 }
 
-// funcdef = typespec func-name "(" func_params ")" "{" compound_stmt "}"
+// funcdef = typespec func_name "(" func_params ")" "{" compound_stmt "}"
 static Function *funcdef() {
   locals = NULL;
   Function *fn = calloc(1, sizeof(Function));
@@ -434,7 +464,7 @@ static Node *func_args() {
 }
 
 // primary = "(" expr ")" | ident args? | num
-// args = "(" func-args? ")"
+// args = "(" func_args? ")"
 static Node *primary() {
   if (consume("(")) {
     Node *node = expr();
