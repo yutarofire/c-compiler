@@ -43,10 +43,16 @@ static bool starts_with(char *p, char *q) {
   return strncmp(p, q, strlen(q)) == 0;
 }
 
+static bool is_alpha(char c) {
+  return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || c == '_';
+}
+
 static bool is_alnum(char c) {
   return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') ||
          ('0' <= c && c <= '9') || c == '_';
 }
+
+static char *keywords[] = {"return", "if", "else", "for", "while", "int", "char"};
 
 // tokenのlinked listを構築する。
 Token *tokenize(char *p) {
@@ -71,41 +77,20 @@ Token *tokenize(char *p) {
     }
 
     // Keywords
-    if (starts_with(p, "return") && !is_alnum(p[6])) {
-      cur = new_token(TK_RESERVED, cur, p, 6);
-      p += 6;
-      continue;
-    }
+    bool is_kw_tokenized = false;
+    for (int i=0; i < (sizeof(keywords)/sizeof(keywords[0])); i++) {
+      char *kw = keywords[i];
+      int len = strlen(kw);
+      if (!starts_with(p, kw) || is_alnum(p[len]))
+        continue;
 
-    if (starts_with(p, "if") && !is_alnum(p[2])) {
-      cur = new_token(TK_RESERVED, cur, p, 2);
-      p += 2;
-      continue;
+      cur = new_token(TK_RESERVED, cur, p, len);
+      p += len;
+      is_kw_tokenized = true;
+      break;
     }
-
-    if (starts_with(p, "else") && !is_alnum(p[4])) {
-      cur = new_token(TK_RESERVED, cur, p, 4);
-      p += 4;
+    if (is_kw_tokenized)
       continue;
-    }
-
-    if (starts_with(p, "for") && !is_alnum(p[3])) {
-      cur = new_token(TK_RESERVED, cur, p, 3);
-      p += 3;
-      continue;
-    }
-
-    if (starts_with(p, "while") && !is_alnum(p[5])) {
-      cur = new_token(TK_RESERVED, cur, p, 5);
-      p += 5;
-      continue;
-    }
-
-    if (starts_with(p, "int") && !is_alnum(p[3])) {
-      cur = new_token(TK_RESERVED, cur, p, 3);
-      p += 3;
-      continue;
-    }
 
     if (starts_with(p, "sizeof") && !is_alnum(p[6])) {
       cur = new_token(TK_RESERVED, cur, p, 6);
@@ -114,9 +99,9 @@ Token *tokenize(char *p) {
     }
 
     // Identifier
-    if (isalpha(*p)) {
+    if (is_alpha(*p)) {
       char *q = p++;
-      while (isalnum(*p))
+      while (is_alnum(*p))
         p++;
       cur = new_token(TK_IDENT, cur, q, p - q);
       continue;
