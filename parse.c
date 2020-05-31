@@ -26,7 +26,7 @@ static Node *primary();
  *   funcdef = typespec func_name "(" func_params ")" "{" compound_stmt "}"
  *   typespec = "int"
  *   func_params = typespec declarator ("," typespec declarator)*
- *   declarator = "*"* ident
+ *   declarator = "*"* ident ("[" num "]")?
  *   compound_stmt = (declaration | stmt)*
  *   declaration = typespec declarator ("=" expr)? ";"
  *   stmt = "return" expr ";"
@@ -133,7 +133,7 @@ static Function *program() {
   for (Function *fn = head.next; fn; fn = fn->next) {
     int offset = 32; // 32 for callee-saved registers
     for (Var *var = locals; var; var = var->next) {
-      offset += 8;
+      offset += var->type->size;
       var->offset = offset;
     }
     fn->stack_size = align_to(offset, 16);
@@ -160,7 +160,7 @@ static Type *typespec() {
   return type_int;
 }
 
-// declarator = "*"* ident
+// declarator = "*"* ident ("[" num "]")?
 static Node *declarator(Type *type) {
   while (consume("*"))
     type = pointer_to(type);
@@ -168,11 +168,21 @@ static Node *declarator(Type *type) {
   if (current_token->kind != TK_IDENT)
     error_at(current_token->str, "expected a variable name");
 
-  Var *var = new_lvar(strndup(current_token->str, current_token->len), type);
-  Node *node = new_node(ND_VAR);
-  node->var = var;
+  char *name = strndup(current_token->str, current_token->len);
   current_token = current_token->next;
 
+  if (equal(current_token, "[")) {
+    skip("[");
+    if (current_token->kind != TK_NUM)
+      error_at(current_token->str, "expected a number");
+    type = array_of(type, current_token->val);
+    current_token = current_token->next;
+    skip("]");
+  }
+
+  Var *var = new_lvar(name, type);
+  Node *node = new_node(ND_VAR);
+  node->var = var;
   return node;
 }
 
@@ -200,6 +210,7 @@ static Node *compound_stmt() {
       cur = cur->next = declaration();
     else
       cur = cur->next = stmt();
+    add_type(cur);
   }
   return head.next;
 }
@@ -349,16 +360,15 @@ static Node *new_add_node(Node *lhs, Node *rhs) {
   if (lhs->type->kind == TY_INT && rhs->type->kind == TY_INT)
     return new_binary_node(ND_ADD, lhs, rhs);
 
-  // ptr + num
-  if (lhs->type->kind == TY_PTR && rhs->type->kind == TY_INT) {
-    return new_binary_node(
-        ND_ADD,
-        lhs,
-        new_binary_node(ND_MUL, rhs, new_num_node(8))
-    );
-  }
+  if (lhs->type->base && rhs->type->base)
+    error(current_token->str, "invalid operands");
 
-  error_at(current_token->str, "invalid operand of \"+\"");
+  // ptr + num
+  return new_binary_node(
+    ND_ADD,
+    lhs,
+    new_binary_node(ND_MUL, rhs, new_num_node(8))
+  );
 }
 
 static Node *new_sub_node(Node *lhs, Node *rhs) {
@@ -437,14 +447,7 @@ static Node *unary() {
   if (consume("sizeof")) {
     Node *node = unary();
     add_type(node);
-    switch (node->type->kind) {
-      case TY_INT:
-        return new_num_node(4);
-      case TY_PTR:
-        return new_num_node(8);
-      default:
-        error_at(current_token->str, "invalud type for \"sizeof\"");
-    }
+    return new_num_node(node->type->size);
   }
 
   return primary();

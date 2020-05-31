@@ -2,10 +2,8 @@
 
 static int top;
 static int labelseq = 1;
-static Function *current_func;
 static char *argreg[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
-
-static void gen_expr();
+static Function *current_func;
 
 static char *reg(int idx) {
   char *r[] = {"r10", "r11", "r12", "r13", "r14", "r15"};
@@ -13,6 +11,21 @@ static char *reg(int idx) {
     error("register out of range: %d", idx);
   return r[idx];
 }
+
+// Load the value from where the stack top is pointing to.
+static void load(Type *type) {
+  if (type->kind == TY_ARRAY)
+    return;
+
+  printf("  mov %s, [%s]\n", reg(top - 1), reg(top - 1));
+}
+
+static void store() {
+  printf("  mov [%s], %s\n", reg(top - 1), reg(top - 2));
+  top--;
+}
+
+static void gen_expr();
 
 // Pushes the given node's address to the stack.
 static void gen_var(Node *node) {
@@ -35,13 +48,11 @@ static void gen_expr(Node *node) {
       return;
     case ND_VAR:
       gen_var(node);
-      // Fetch value of variable by its address,
-      // and load it onto register.
-      printf("  mov %s, [%s]\n", reg(top - 1), reg(top - 1));
+      load(node->type);
       return;
     case ND_DEREF:
       gen_expr(node->lhs);
-      printf("  mov %s, [%s]\n", reg(top - 1), reg(top - 1));
+      load(node->type);
       return;
     case ND_ADDR:
       gen_var(node->lhs);
@@ -49,9 +60,7 @@ static void gen_expr(Node *node) {
     case ND_ASSIGN:
       gen_expr(node->rhs);
       gen_var(node->lhs);
-      printf("  mov [%s], %s\n", reg(top - 1), reg(top - 2));
-      // Right-hand value remains on top of reg.
-      top--;
+      store();
       return;
     case ND_FUNCALL: {
       int i = 0;

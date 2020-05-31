@@ -116,15 +116,23 @@ Function *parse(Token *token);
 typedef enum {
   TY_INT,
   TY_PTR,
+  TY_ARRAY,
 } TypeKind;
 
 struct Type {
   TypeKind kind;
+  int size; // sizeof() value
+
+  // Pointer or Array
   Type *base;
+
+  // TY_ARRAY
+  int array_len;
 };
 
 extern Type *type_int;
 Type *pointer_to(Type *base);
+Type *array_of(Type *base, int len);
 void add_type(Node *node);
 
 /*
