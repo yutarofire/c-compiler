@@ -18,6 +18,7 @@ static Node *relational();
 static Node *add();
 static Node *mul();
 static Node *unary();
+static Node *postfix();
 static Node *primary();
 
 /*
@@ -43,7 +44,8 @@ static Node *primary();
  *   mul = unary ("*" unary | "/" unary)*
  *   unary = ("+" | "-" | "*" | "&") unary
  *         | "sizeof" unary
- *         | primary
+ *         | postfix
+ *   postfix = primary ("[" expr "]")*
  *   primary = "(" expr ")" | ident ("(" func_args? ")")? | num
  */
 
@@ -430,7 +432,7 @@ static Node *mul() {
 
 // unary = ("+" | "-" | "*" | "&") unary
 //       | "sizeof" unary
-//       | primary
+//       | postfix
 static Node *unary() {
   if (consume("+"))
     return unary();
@@ -450,7 +452,23 @@ static Node *unary() {
     return new_num_node(node->type->size);
   }
 
-  return primary();
+  return postfix();
+}
+
+// postfix = primary ("[" expr "]")*
+static Node *postfix() {
+  Node *node = primary();
+
+  if (consume("[")) {
+    Node *idx = expr();
+    node = new_unary_node(
+      ND_DEREF,
+      new_add_node(node, idx)
+    );
+    skip("]");
+  }
+
+  return node;
 }
 
 static Node *func_args() {
