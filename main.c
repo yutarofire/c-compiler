@@ -126,15 +126,17 @@ void debug_node(Node *node) {
   switch (node->type->kind) {
     case TY_INT:
       printf("TY_INT\n");
-      break;
+      return;
     case TY_PTR:
       printf("TY_PTR\n");
-      break;
+      return;
+    case TY_ARRAY:
+      printf("TY_ARRAY\n");
+      return;
     default:
       printf("\nDebugError: Unknown node type\n");
       return;
   }
-  return;
 }
 
 void debug_nodes(Node *node) {
