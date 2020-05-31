@@ -183,11 +183,9 @@ static Program *program() {
 
 // global_var = typespec declarator ";"
 static Var *global_var() {
-  Type *ty = typespec();
-  if (current_token->kind != TK_IDENT)
-    error_at(current_token->str, "expected identifier");
-  new_gvar(strndup(current_token->str, current_token->len), ty);
-  current_token = current_token->next;
+  Type *base_ty = typespec();
+  Node *node = declarator(base_ty);
+  new_gvar(node->var->name, node->var->type);
   skip(";");
 }
 

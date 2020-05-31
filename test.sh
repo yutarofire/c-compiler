@@ -137,9 +137,9 @@ assert 5 'int g; int main() { g=4; int g=5; return g; }'
 assert 3 'int g; int main() { setg(); return g; } int setg() { g=3; return 0; }'
 assert 8 'int g; int main() { return sizeof(g); }'
 
-# assert 1 'int g[3]; int main() { g[0]=1; g[1]=2; g[2]=3; return g[0]; }'
-# assert 2 'int g[3]; int main() { g[0]=1; g[1]=2; g[2]=3; return g[1]; }'
-# assert 3 'int g[3]; int main() { g[0]=1; g[1]=2; g[2]=3; return g[2]; }'
-# assert 24 'int g[3]; int main() { return sizeof(g); }'
+assert 1 'int g[3]; int main() { g[0]=1; g[1]=2; g[2]=3; return g[0]; }'
+assert 2 'int g[3]; int main() { g[0]=1; g[1]=2; g[2]=3; return g[1]; }'
+assert 3 'int g[3]; int main() { g[0]=1; g[1]=2; g[2]=3; return g[2]; }'
+assert 24 'int g[3]; int main() { return sizeof(g); }'
 
 echo OK
