@@ -44,6 +44,7 @@ struct Var {
   char *name;
   Type *type;
   int offset; // Offset from RBForP
+  bool is_local;
 };
 
 typedef enum {
@@ -108,7 +109,12 @@ struct Function {
   int stack_size;
 };
 
-Function *parse(Token *token);
+typedef struct {
+  Var *globals;
+  Function *funcs;
+} Program;
+
+Program *parse(Token *token);
 
 /*
  * type.c
@@ -138,7 +144,7 @@ void add_type(Node *node);
 /*
  * codegen.c
  */
-void codegen(Function *prog);
+void codegen(Program *prog);
 
 // Debugger
 void debug_token(Token *token);

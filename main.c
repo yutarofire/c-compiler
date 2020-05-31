@@ -5,7 +5,7 @@ int main(int argc, char **argv) {
     error("%s: wrong number of arguments", argv[0]);
 
   Token *token = tokenize(argv[1]);
-  Function *prog = parse(token);
+  Program *prog = parse(token);
   codegen(prog);
 
   return 0; 

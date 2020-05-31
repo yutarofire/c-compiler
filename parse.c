@@ -2,8 +2,10 @@
 
 static Token *current_token;
 static Var *locals;
+static Var *globals;
 
-static Function *program();
+static Program *program();
+static Var *global_var();
 static Function *funcdef();
 static Type *typespec();
 static void func_params();
@@ -23,7 +25,7 @@ static Node *primary();
 
 /*
  * Production rules:
- *   program = funcdef*
+ *   program = (global_var | funcdef)*
  *   funcdef = typespec func_name "(" func_params ")" "{" compound_stmt "}"
  *   typespec = "int"
  *   func_params = typespec declarator ("," typespec declarator)*
@@ -55,6 +57,12 @@ static Var *find_var(Token *token) {
     if (strlen(var->name) == token->len &&
         !strncmp(token->str, var->name, token->len))
       return var;
+
+  for (Var *var = globals; var; var = var->next)
+    if (strlen(var->name) == token->len &&
+        !strncmp(token->str, var->name, token->len))
+      return var;
+
   return NULL;
 }
 
@@ -88,7 +96,18 @@ static Var *new_lvar(char *name, Type *type) {
   var->name = name;
   var->next = locals;
   var->type = type;
+  var->is_local = true;
   locals = var;
+  return var;
+}
+
+static Var *new_gvar(char *name, Type *type) {
+  Var *var = calloc(1, sizeof(Var));
+  var->name = name;
+  var->next = globals;
+  var->type = type;
+  var->is_local = false;
+  globals = var;
   return var;
 }
 
@@ -123,13 +142,28 @@ static int align_to(int n, int align) {
   return (n + align - 1) & ~(align - 1);
 }
 
-// program = funcdef*
-static Function *program() {
+// program = (global_var | funcdef)*
+static Program *program() {
   Function head = {};
   Function *cur = &head;
+  globals = NULL;
 
-  while (current_token->kind != TK_EOF)
-    cur = cur->next = funcdef();
+  while (current_token->kind != TK_EOF) {
+    Token *tmp = current_token;
+    Type *ty = typespec();
+    declarator(ty);
+    bool is_func = equal(current_token, "(");
+    current_token = tmp;
+
+    // Function
+    if (is_func) {
+      cur = cur->next = funcdef();
+      continue;
+    }
+
+    // Gloval variable
+    Var *gvar = global_var();
+  }
 
   // Assign offsets to local variables.
   for (Function *fn = head.next; fn; fn = fn->next) {
@@ -141,7 +175,20 @@ static Function *program() {
     fn->stack_size = align_to(offset, 16);
   }
 
-  return head.next;
+  Program *prog = calloc(1, sizeof(Program));
+  prog->globals = globals;
+  prog->funcs = head.next;
+  return prog;
+}
+
+// global_var = typespec declarator ";"
+static Var *global_var() {
+  Type *ty = typespec();
+  if (current_token->kind != TK_IDENT)
+    error_at(current_token->str, "expected identifier");
+  new_gvar(strndup(current_token->str, current_token->len), ty);
+  current_token = current_token->next;
+  skip(";");
 }
 
 // func_params = typespec declarator ("," typespec declarator)*
@@ -527,9 +574,9 @@ static Node *primary() {
   error_at(current_token->str, "unexpected token");
 }
 
-Function *parse(Token *token) {
+Program *parse(Token *token) {
   current_token = token;
-  Function *prog = program();
+  Program *prog = program();
 
   if (current_token->kind != TK_EOF)
     error_at(current_token->str, "extra token");

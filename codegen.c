@@ -31,7 +31,10 @@ static void gen_expr();
 static void gen_var(Node *node) {
   switch (node->kind) {
     case ND_VAR:
-      printf("  lea %s, [rbp-%d]\n", reg(top++), node->var->offset);
+      if (node->var->is_local)
+        printf("  lea %s, [rbp-%d]\n", reg(top++), node->var->offset);
+      else
+        printf("  mov %s, offset %s\n", reg(top++), node->var->name);
       return;
     case ND_DEREF:
       gen_expr(node->lhs);
@@ -208,10 +211,10 @@ static void gen_stmt(Node *node) {
   }
 }
 
-void codegen(Function *prog) {
-  printf(".intel_syntax noprefix\n");
+static void emit_text(Function *funcs) {
+  printf(".text\n");
 
-  for (Function *fn = prog; fn; fn = fn->next) {
+  for (Function *fn = funcs; fn; fn = fn->next) {
     printf(".globl %s\n", fn->name);
     printf("%s:\n", fn->name);
 
@@ -250,4 +253,19 @@ void codegen(Function *prog) {
     printf("  pop rbp\n");
     printf("  ret\n");
   }
+}
+
+static void emit_data(Var *globals) {
+  printf(".data\n");
+
+  for (Var *gvar = globals; gvar; gvar = gvar->next) {
+    printf("%s:\n", gvar->name);
+    printf("  .zero %d\n", gvar->type->size);
+  }
+}
+
+void codegen(Program *prog) {
+  printf(".intel_syntax noprefix\n");
+  emit_data(prog->globals);
+  emit_text(prog->funcs);
 }

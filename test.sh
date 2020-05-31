@@ -14,7 +14,7 @@ assert() {
   input=$2
 
   ./9cc "$input" > tmp.s
-  cc -o tmp tmp.s tmp2.o
+  gcc -static -o tmp tmp.s tmp2.o
   ./tmp
   actual=$?
   rm tmp.s tmp
@@ -129,5 +129,17 @@ assert 1 'int main() { int a[3]; a[0]=1; a[1]=2; a[2]=3; return a[0]; }'
 assert 2 'int main() { int a[3]; a[0]=1; a[1]=2; a[2]=3; return a[1]; }'
 assert 3 'int main() { int a[3]; a[0]=1; a[1]=2; a[2]=3; return a[2]; }'
 assert 24 'int main() { int a[3]; return sizeof(a); }'
+
+assert 0 'int g; int main() { return g; }'
+assert 3 'int g; int main() { g=3; return g; }'
+assert 8 'int g; int main() { g=3; int lcl=5; return g+lcl; }'
+assert 5 'int g; int main() { g=4; int g=5; return g; }'
+assert 3 'int g; int main() { setg(); return g; } int setg() { g=3; return 0; }'
+assert 8 'int g; int main() { return sizeof(g); }'
+
+# assert 1 'int g[3]; int main() { g[0]=1; g[1]=2; g[2]=3; return g[0]; }'
+# assert 2 'int g[3]; int main() { g[0]=1; g[1]=2; g[2]=3; return g[1]; }'
+# assert 3 'int g[3]; int main() { g[0]=1; g[1]=2; g[2]=3; return g[2]; }'
+# assert 24 'int g[3]; int main() { return sizeof(g); }'
 
 echo OK
