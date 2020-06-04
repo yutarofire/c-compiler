@@ -48,7 +48,7 @@ static Node *primary();
  *         | "sizeof" unary
  *         | postfix
  *   postfix = primary ("[" expr "]")*
- *   primary = "(" expr ")" | ident ("(" func_args? ")")? | num
+ *   primary = "(" expr ")" | ident ("(" func_args? ")")? | str | num
  */
 
 // Find local variable by name.
@@ -420,7 +420,11 @@ static Node *new_add_node(Node *lhs, Node *rhs) {
   return new_binary_node(
     ND_ADD,
     lhs,
-    new_binary_node(ND_MUL, rhs, new_num_node(8))
+    new_binary_node(
+      ND_MUL,
+      rhs,
+      new_num_node(lhs->type->base->size)
+    )
   );
 }
 
@@ -437,7 +441,11 @@ static Node *new_sub_node(Node *lhs, Node *rhs) {
     return new_binary_node(
         ND_SUB,
         lhs,
-        new_binary_node(ND_MUL, rhs, new_num_node(8))
+        new_binary_node(
+          ND_MUL,
+          rhs,
+          new_num_node(lhs->type->base->size)
+        )
     );
   }
 
@@ -535,7 +543,21 @@ static Node *func_args() {
   return head.next;
 }
 
-// primary = "(" expr ")" | ident args? | num
+static char *new_gvar_name(void) {
+  static int cnt = 0;
+  char *buf = malloc(20);
+  sprintf(buf, ".L.data.%d", cnt++);
+  return buf;
+}
+
+static Var *new_string_literal(Token *tok) {
+  Type *ty = array_of(type_char, tok->cont_len);
+  Var *var = new_gvar(new_gvar_name(), ty);
+  var->init_data = tok->contents;
+  return var;
+}
+
+// primary = "(" expr ")" | ident args? | str | num
 // args = "(" func_args? ")"
 static Node *primary() {
   if (consume("(")) {
@@ -566,6 +588,14 @@ static Node *primary() {
     Node *node = new_node(ND_VAR);
     node->var = var;
     current_token = current_token->next;
+    return node;
+  }
+
+  if (current_token->kind == TK_STR) {
+    Var *var = new_string_literal(current_token);
+    current_token = current_token->next;
+    Node *node = new_node(ND_VAR);
+    node->var = var;
     return node;
   }
 

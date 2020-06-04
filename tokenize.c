@@ -76,6 +76,22 @@ Token *tokenize(char *p) {
       continue;
     }
 
+    // String literal
+    if (*p == '"') {
+      char *start = p;
+      p++; // first '"'
+      while (*p && *p != '"')
+        p++;
+      if (!*p)
+        error_at(start, "unclosed string literal");
+      p++; // second '"'
+
+      cur = new_token(TK_STR, cur, start, p - start);
+      cur->contents = strndup(start + 1, p - start - 2);
+      cur->cont_len = p - start - 1;
+      continue;
+    }
+
     // Keywords
     bool is_kw_tokenized = false;
     for (int i=0; i < (sizeof(keywords)/sizeof(keywords[0])); i++) {

@@ -16,6 +16,7 @@ typedef enum {
   TK_RESERVED, // Keywords or orerators
   TK_IDENT,    // Identifiers
   TK_NUM,      // Numeric literals
+  TK_STR,      // String literals
   TK_EOF,      // End-of-file markers
 } TokenKind;
 
@@ -24,9 +25,14 @@ typedef struct Token Token;
 struct Token {
   TokenKind kind;
   Token *next;
+
   long val;  // For TK_NUM, number value
   char *str; // Rested string
   int len;   // Token length
+
+  // String literal
+  char *contents; // including terminating '\0'
+  int cont_len;   // length
 };
 
 Token *tokenize(char *input);
@@ -43,8 +49,13 @@ struct Var {
   Var *next;
   char *name;
   Type *type;
-  int offset; // Offset from RBForP
   bool is_local;
+
+  // Local variable
+  int offset;
+
+  // Global variable
+  char *init_data;
 };
 
 typedef enum {
