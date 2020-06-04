@@ -121,6 +121,7 @@ Program *parse(Token *token);
  */
 typedef enum {
   TY_INT,
+  TY_CHAR,
   TY_PTR,
   TY_ARRAY,
 } TypeKind;
@@ -137,8 +138,10 @@ struct Type {
 };
 
 extern Type *type_int;
+extern Type *type_char;
 Type *pointer_to(Type *base);
 Type *array_of(Type *base, int len);
+bool is_integer(Type *type);
 void add_type(Node *node);
 
 /*

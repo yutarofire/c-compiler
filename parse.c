@@ -203,8 +203,13 @@ static void func_params() {
 
 // typespec = "int"
 static Type *typespec() {
-  skip("int");
-  return type_int;
+  if (consume("int"))
+    return type_int;
+
+  if (consume("char"))
+    return type_char;
+
+  error_at(current_token->str, "invalid type");
 }
 
 // declarator = "*"* ident ("[" num "]")?
@@ -253,7 +258,8 @@ static Node *compound_stmt() {
   Node head = {};
   Node *cur = &head;
   while (!equal(current_token, "}")) {
-    if (equal(current_token, "int"))
+    if (equal(current_token, "int") ||
+        equal(current_token, "char"))
       cur = cur->next = declaration();
     else
       cur = cur->next = stmt();
@@ -404,7 +410,7 @@ static Node *new_add_node(Node *lhs, Node *rhs) {
   add_type(rhs);
 
   // num + num
-  if (lhs->type->kind == TY_INT && rhs->type->kind == TY_INT)
+  if (is_integer(lhs->type) && is_integer(rhs->type))
     return new_binary_node(ND_ADD, lhs, rhs);
 
   if (lhs->type->base && rhs->type->base)
@@ -423,11 +429,11 @@ static Node *new_sub_node(Node *lhs, Node *rhs) {
   add_type(rhs);
 
   // num - num
-  if (lhs->type->kind == TY_INT && rhs->type->kind == TY_INT)
+  if (is_integer(lhs->type) && is_integer(rhs->type))
     return new_binary_node(ND_SUB, lhs, rhs);
 
   // ptr - num
-  if (lhs->type->kind == TY_PTR && rhs->type->kind == TY_INT) {
+  if (lhs->type->kind == TY_PTR && is_integer(rhs->type)) {
     return new_binary_node(
         ND_SUB,
         lhs,

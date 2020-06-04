@@ -2,7 +2,8 @@
 
 static int top;
 static int labelseq = 1;
-static char *argreg[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+static char *argreg8[] = {"dil", "sil", "dl", "cl", "r8b", "r9b"};
+static char *argreg64[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 static Function *current_func;
 
 static char *reg(int idx) {
@@ -13,15 +14,22 @@ static char *reg(int idx) {
 }
 
 // Load the value from where the stack top is pointing to.
-static void load(Type *type) {
-  if (type->kind == TY_ARRAY)
+static void load(Type *ty) {
+  if (ty->kind == TY_ARRAY)
     return;
 
-  printf("  mov %s, [%s]\n", reg(top - 1), reg(top - 1));
+  if (ty->size == 1)
+    printf("  movsx %s, byte ptr [%s]\n", reg(top - 1), reg(top - 1));
+  else
+    printf("  mov %s, [%s]\n", reg(top - 1), reg(top - 1));
 }
 
-static void store() {
-  printf("  mov [%s], %s\n", reg(top - 1), reg(top - 2));
+static void store(Type *ty) {
+  if (ty->size == 1)
+    printf("  mov [%s], %sb\n", reg(top - 1), reg(top - 2));
+  else
+    printf("  mov [%s], %s\n", reg(top - 1), reg(top - 2));
+
   top--;
 }
 
@@ -63,13 +71,13 @@ static void gen_expr(Node *node) {
     case ND_ASSIGN:
       gen_expr(node->rhs);
       gen_var(node->lhs);
-      store();
+      store(node->type);
       return;
     case ND_FUNCALL: {
       int i = 0;
       for (Node *arg = node->args; arg; arg = arg->next) {
         gen_expr(arg);
-        printf("  mov %s, %s\n", argreg[i++], reg(--top));
+        printf("  mov %s, %s\n", argreg64[i++], reg(--top));
       }
 
       printf("  push r10\n");
@@ -234,8 +242,12 @@ static void emit_text(Function *funcs) {
     int i = 0;
     for (Var *param = fn->params; param; param = param->next)
       i++;
-    for (Var *param = fn->params; param; param = param->next)
-      printf("  mov [rbp-%d], %s\n", param->offset, argreg[--i]);
+    for (Var *param = fn->params; param; param = param->next) {
+      if (param->type->size == 1)
+        printf("  mov [rbp-%d], %s\n", param->offset, argreg8[--i]);
+      else
+        printf("  mov [rbp-%d], %s\n", param->offset, argreg64[--i]);
+    }
 
     // Emit code
     for (Node *n = fn->node; n; n = n->next) {

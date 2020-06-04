@@ -142,4 +142,12 @@ assert 2 'int g[3]; int main() { g[0]=1; g[1]=2; g[2]=3; return g[1]; }'
 assert 3 'int g[3]; int main() { g[0]=1; g[1]=2; g[2]=3; return g[2]; }'
 assert 24 'int g[3]; int main() { return sizeof(g); }'
 
+assert 1 'int main() { char c; return sizeof(c); }'
+assert 1 'int main() { char c=1; char d=2; return c; }'
+assert 2 'int main() { char c=1; char d=2; return d; }'
+assert 1 'int main() { char x; return sizeof(x); }'
+assert 10 'int main() { char x[10]; return sizeof(x); }'
+assert 3 'int main() { char x[3]; x[0]=-1; x[1]=2; int y=4; return x[0]+y; }'
+assert 1 'int main() { return sub_char(7, 3, 3); } int sub_char(char a, char b, char c) { return a-b-c; }'
+
 echo OK

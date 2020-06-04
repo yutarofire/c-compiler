@@ -1,6 +1,7 @@
 #include "9cc.h"
 
 Type *type_int = &(Type){TY_INT, 8};
+Type *type_char = &(Type){TY_CHAR, 1};
 
 Type *pointer_to(Type *base) {
   Type *ty = calloc(1, sizeof(Type));
@@ -17,6 +18,10 @@ Type *array_of(Type *base, int len) {
   ty->base = base;
   ty->array_len = len;
   return ty;
+}
+
+bool is_integer(Type *type) {
+  return type->kind == TY_INT || type->kind == TY_CHAR;
 }
 
 void add_type(Node *node) {
