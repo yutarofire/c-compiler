@@ -168,7 +168,7 @@ static Program *program() {
   // Assign offsets to local variables.
   for (Function *fn = head.next; fn; fn = fn->next) {
     int offset = 32; // 32 for callee-saved registers
-    for (Var *var = locals; var; var = var->next) {
+    for (Var *var = fn->locals; var; var = var->next) {
       offset += var->type->size;
       var->offset = offset;
     }
