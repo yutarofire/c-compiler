@@ -52,7 +52,7 @@ static bool is_alnum(char c) {
          ('0' <= c && c <= '9') || c == '_';
 }
 
-static char *keywords[] = {"return", "if", "else", "for", "while", "int", "char"};
+static char *keywords[] = {"return", "if", "else", "for", "while", "sizeof", "int", "char"};
 
 // tokenのlinked listを構築する。
 Token *tokenize(char *p) {
@@ -91,12 +91,6 @@ Token *tokenize(char *p) {
     }
     if (is_kw_tokenized)
       continue;
-
-    if (starts_with(p, "sizeof") && !is_alnum(p[6])) {
-      cur = new_token(TK_RESERVED, cur, p, 6);
-      p += 6;
-      continue;
-    }
 
     // Identifier
     if (is_alpha(*p)) {
