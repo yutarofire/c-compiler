@@ -1,6 +1,7 @@
 #include "9cc.h"
 
 static char *user_input;
+static char *filename;
 
 // Reports an error and exit.
 void error(char *fmt, ...) {
@@ -13,8 +14,23 @@ void error(char *fmt, ...) {
 
 // Reports an error location and exit.
 static void verror_at(char *loc, char *fmt, va_list ap) {
-  int pos = loc - user_input;
-  fprintf(stderr, "%s\n", user_input);
+  char *line = loc;
+  while (user_input < line && line[-1] != '\n')
+    line--;
+
+  char *end = loc;
+  while (*end != '\n')
+    end++;
+
+  int line_num = 1;
+  for (char *p = user_input; p < line; p++)
+    if (*p == '\n')
+      line_num++;
+
+  int indent = fprintf(stderr, "%s:%d: ", filename, line_num);
+  fprintf(stderr, "%.*s\n", (int)(end - line), line);
+
+  int pos = loc - line + indent;
   fprintf(stderr, "%*s", pos, "");
   fprintf(stderr, "^ ");
   vfprintf(stderr, fmt, ap);
@@ -144,4 +160,47 @@ Token *tokenize(char *p) {
 
   new_token(TK_EOF, cur, p, 0);
   return head.next;
+}
+
+static char *read_file(char *path) {
+  filename = path;
+
+  FILE *fp;
+
+  if (strcmp(path, "-") == 0) {
+    fp = stdin;
+  } else {
+    fp = fopen(path, "r");
+    if (!fp)
+      error("cannot open %s: %s", path, strerror(errno));
+  }
+
+  int buflen = 4096;
+  int nread = 0;
+  char *buf = calloc(1, buflen);
+
+  for (;;) {
+    int end = buflen - 2; // extra 2 bytes for the trailing "\n\0"
+    int n = fread(buf + nread, 1, end - nread, fp);
+    if (n == 0)
+      break;
+    nread += n;
+    if (nread == end) {
+      buflen *= 2;
+      buf = realloc(buf, buflen);
+    }
+  }
+
+  if (fp != stdin)
+    fclose(fp);
+
+  if (nread == 0 || buf[nread - 1] != '\n')
+    buf[nread++] = '\n';
+  buf[nread++] = '\0';
+
+  return buf;
+}
+
+Token *tokenize_file(char *path) {
+  return tokenize(read_file(path));
 }
