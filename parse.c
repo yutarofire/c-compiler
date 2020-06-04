@@ -48,7 +48,11 @@ static Node *primary();
  *         | "sizeof" unary
  *         | postfix
  *   postfix = primary ("[" expr "]")*
- *   primary = "(" expr ")" | ident ("(" func_args? ")")? | str | num
+ *   primary = "(" "{" compound_stmt "}" ")"
+ *           | "(" expr ")"
+ *           | ident ("(" func_args? ")")?
+ *           | str
+ *           | num
  */
 
 // Find local variable by name.
@@ -557,9 +561,22 @@ static Var *new_string_literal(Token *tok) {
   return var;
 }
 
-// primary = "(" expr ")" | ident args? | str | num
+//   primary = "(" "{" compound_stmt "}" ")"
+//           | "(" expr ")"
+//           | ident args?
+//           | str
+//           | num
 // args = "(" func_args? ")"
 static Node *primary() {
+  if (equal(current_token, "(") && equal(current_token->next, "{")) {
+    current_token = current_token->next->next;
+    Node *node = new_node(ND_STMT_EXPR);
+    node->body = compound_stmt();
+    skip("}");
+    skip(")");
+    return node;
+  }
+
   if (consume("(")) {
     Node *node = expr();
     skip(")");

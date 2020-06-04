@@ -80,6 +80,7 @@ typedef enum {
   ND_BLOCK,     // Block "{...}"
   ND_FUNCALL,   // Function call
   ND_EXPR_STMT, // Expression statement
+  ND_STMT_EXPR, // Statement expression
   ND_VAR,       // Variable
   ND_NUM,       // Integer
 } NodeKind;
@@ -91,12 +92,14 @@ struct Node {
   Node *next;
   Type *type;
 
-  Node *lhs;  // Left-hand side
-  Node *rhs;  // Right-hand side
+  Node *lhs; // Left-hand side
+  Node *rhs; // Right-hand side
 
-  Var *var;       // For ND_VAR
-  long val;       // For ND_NUM
-  Node *body;     // For ND_BLOCK
+  Var *var;  // For ND_VAR
+  long val;  // For ND_NUM
+
+  // Block or statement-expression
+  Node *body;
 
   // Function call
   char *funcname;

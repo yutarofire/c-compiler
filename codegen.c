@@ -34,6 +34,7 @@ static void store(Type *ty) {
 }
 
 static void gen_expr();
+static void gen_stmt();
 
 // Pushes the given node's address to the stack.
 static void gen_var(Node *node) {
@@ -89,6 +90,11 @@ static void gen_expr(Node *node) {
       printf("  mov %s, rax\n", reg(top++));
       return;
     }
+    case ND_STMT_EXPR:
+      for (Node *n = node->body; n; n = n->next)
+        gen_stmt(n);
+      top++;
+      return;
   }
 
   gen_expr(node->lhs);

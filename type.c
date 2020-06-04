@@ -71,5 +71,12 @@ void add_type(Node *node) {
     case ND_DEREF:
       node->type = node->lhs->type->base;
       return;
+    case ND_STMT_EXPR: {
+      Node *stmt = node->body;
+      while (stmt->next)
+        stmt = stmt->next;
+      node->type = stmt->lhs->type;
+      return;
+    }
   }
 }
