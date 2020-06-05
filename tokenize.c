@@ -70,6 +70,15 @@ static bool is_alnum(char c) {
 
 static char *keywords[] = {"return", "if", "else", "for", "while", "sizeof", "int", "char"};
 
+static char read_escaped_char(char *p) {
+  switch (*p) {
+    case 't': return '\t';
+    case 'n': return '\n';
+    case 'r': return '\r';
+    default: return *p;
+  }
+}
+
 // tokenのlinked listを構築する。
 Token *tokenize(char *p) {
   user_input = p;
@@ -115,16 +124,37 @@ Token *tokenize(char *p) {
     // String literal
     if (*p == '"') {
       char *start = p;
-      p++; // first '"'
-      while (*p && *p != '"')
-        p++;
-      if (!*p)
-        error_at(start, "unclosed string literal");
-      p++; // second '"'
+
+      p++; // beginning '"'
+
+      // Find the closing double-quote.
+      char *end = p;
+      for (; *end != '"'; end++) {
+        if (*end == '\0')
+          error_at(end, "unclosed string literal");
+        if (*end == '\\')
+          end++;
+      }
+
+      int buf_size = end - p + 1; // Including terminating '\0'
+      char *buf = malloc(buf_size);
+
+      int len = 0;
+      while (*p != '"') {
+        if (*p == '\\') {
+          buf[len++] = read_escaped_char(p + 1);
+          p += 2;
+        } else {
+          buf[len++] = *p++;
+        }
+      }
+      buf[len++] = '\0';
+
+      p++; // terminating '"'
 
       cur = new_token(TK_STR, cur, start, p - start);
-      cur->contents = strndup(start + 1, p - start - 2);
-      cur->cont_len = p - start - 1;
+      cur->contents = buf;
+      cur->cont_len = len;
       continue;
     }
 
