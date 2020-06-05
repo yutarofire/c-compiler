@@ -75,11 +75,15 @@ static void gen_expr(Node *node) {
       store(node->type);
       return;
     case ND_FUNCALL: {
-      int i = 0;
+      int nargs = 0;
+      // First, evaluate args and put them to the stack.
       for (Node *arg = node->args; arg; arg = arg->next) {
         gen_expr(arg);
-        printf("  mov %s, %s\n", argreg64[i++], reg(--top));
+        nargs++;
       }
+      // Then, move arg values to the argreg.
+      for (int i = 1; i <= nargs; i++)
+        printf("  mov %s, %s\n", argreg64[nargs - i], reg(--top));
 
       printf("  push r10\n");
       printf("  push r11\n");

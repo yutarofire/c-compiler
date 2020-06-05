@@ -27,6 +27,16 @@ assert() {
   fi
 }
 
+assert 13 '
+int main() {
+  return tes(10, add(1, 2));
+}
+
+int tes(int x, int y) {
+  return x + y;
+}
+'
+
 assert 0 'int main() { return 0; }'
 assert 42 'int main() { return 42; }'
 assert 5 'int main() { return 2+3; }'
