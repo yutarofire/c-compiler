@@ -34,10 +34,11 @@ static Node *primary();
  *   declaration = typespec declarator ("=" expr)? ";"
  *   stmt = "return" expr ";"
  *        | "if" "(" expr ")" stmt ("else" stmt)?
- *        | "for" "(" expr? ";" expr? ";" expr? ")" stmt
+ *        | "for" "(" expr_stmt? ";" expr? ";" expr_stmt? ")" stmt
  *        | "while" "(" expr ")" stmt
  *        | "{" stmt* "}"
- *        | expr ";"
+ *        | expr_stmt ";"
+ *   expr_stmt = expr
  *   expr = assign
  *   assign = equality ("=" assign)?
  *   equality = relational ("==" relational | "!=" relational)*
@@ -298,12 +299,17 @@ static Function *funcdef() {
   return fn;
 }
 
+// expr_stmt = expr
+static Node *expr_stmt() {
+  return new_unary_node(ND_EXPR_STMT, expr());
+}
+
 // stmt = "return" expr ";"
 //      | "if" "(" expr ")" stmt ("else" stmt)?
-//      | "for" "(" expr? ";" expr? ";" expr? ")" stmt
+//      | "for" "(" expr_stmt? ";" expr? ";" expr_stmt? ")" stmt
 //      | "while" "(" expr ")" stmt
 //      | "{" stmt* "}"
-//      | expr ";"
+//      | expr_stmt ";"
 static Node *stmt() {
   if (consume("return")) {
     Node *node = new_unary_node(ND_RETURN, expr());
@@ -327,16 +333,15 @@ static Node *stmt() {
     skip("(");
 
     if (!equal(current_token, ";"))
-      node->init = declaration();
-    else
-      skip(";");
+      node->init = expr_stmt();
+    skip(";");
 
     if (!equal(current_token, ";"))
       node->cond = expr();
     skip(";");
 
     if (!equal(current_token, ")"))
-      node->inc = new_unary_node(ND_EXPR_STMT, expr());
+      node->inc = expr_stmt();
     skip(")");
 
     node->then = stmt();
@@ -359,7 +364,7 @@ static Node *stmt() {
     return node;
   }
 
-  Node *node = new_unary_node(ND_EXPR_STMT, expr());
+  Node *node = expr_stmt();
   skip(";");
   return node;
 }

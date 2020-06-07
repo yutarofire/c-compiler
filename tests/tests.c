@@ -92,8 +92,7 @@ int main() {
   assert(2, ({ int x; if (1) x=2; else x=3; x; }), "({ int x; if (1) x=2; else x=3; x; })");
   assert(2, ({ int x; if (2-1) x=2; else x=3; x; }), "({ int x; if (2-1) x=2; else x=3; x; })");
 
-  // FIXME
-  // assert(55, ({ int i=0; int j=0; for (i=0; i<=10; i=i+1) j=i+j; j; }), "({ int i=0; int j=0; for (i=0; i<=10; i=i+1) j=i+j; j; })");
+  assert(55, ({ int i=0; int j=0; for (i=0; i<=10; i=i+1) j=i+j; j; }), "({ int i=0; int j=0; for (i=0; i<=10; i=i+1) j=i+j; j; })");
 
   assert(10, ({ int i=0; while(i<10) i=i+1; i; }), "({ int i=0; while(i<10) i=i+1; i; })");
 
@@ -179,7 +178,7 @@ int main() {
   assert(0, "abc"[3], "abc[3]");
   assert(4, sizeof("abc"), "sizeof(abc)");
 
-  // FIXME
+  // FIXME: Fix handling local variables, especially for block scopes.
   // assert(2, ({ int x=2; { int x=3; } x; }), "({ int x=2; { int x=3; } x; })");
   // assert(2, ({ int x=2; { int x=3; } int y=4; x; }), "({ int x=2; { int x=3; } int y=4; x; })");
   // assert(3, ({ int x=2; { x=3; } x; }), "({ int x=2; { x=3; } x; })");
