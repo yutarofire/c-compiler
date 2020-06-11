@@ -178,10 +178,9 @@ int main() {
   assert(0, "abc"[3], "abc[3]");
   assert(4, sizeof("abc"), "sizeof(abc)");
 
-  // FIXME: Fix handling local variables, especially for block scopes.
-  // assert(2, ({ int x=2; { int x=3; } x; }), "({ int x=2; { int x=3; } x; })");
-  // assert(2, ({ int x=2; { int x=3; } int y=4; x; }), "({ int x=2; { int x=3; } int y=4; x; })");
-  // assert(3, ({ int x=2; { x=3; } x; }), "({ int x=2; { x=3; } x; })");
+  assert(2, ({ int x=2; { int x=3; } x; }), "({ int x=2; { int x=3; } x; })");
+  assert(2, ({ int x=2; { int x=3; } int y=4; x; }), "({ int x=2; { int x=3; } int y=4; x; })");
+  assert(3, ({ int x=2; { x=3; } x; }), "({ int x=2; { x=3; } x; })");
 
   printf("OK\n");
   return 0;

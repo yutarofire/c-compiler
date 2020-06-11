@@ -1,8 +1,18 @@
 #include "9cc.h"
 
+typedef struct VarScope VarScope;
+struct VarScope {
+  VarScope *next;
+  int depth;
+  Var *var;
+};
+
 static Token *current_token;
 static Var *locals;
 static Var *globals;
+
+static VarScope *var_scope;
+static int scope_depth;
 
 static Program *program();
 static Var *global_var();
@@ -58,10 +68,10 @@ static Node *primary();
 
 // Find local variable by name.
 static Var *find_var(Token *token) {
-  for (Var *var = locals; var; var = var->next)
-    if (strlen(var->name) == token->len &&
-        !strncmp(token->str, var->name, token->len))
-      return var;
+  for (VarScope *sc = var_scope; sc; sc = sc->next)
+    if (strlen(sc->var->name) == token->len &&
+        !strncmp(token->str, sc->var->name, token->len))
+      return sc->var;
 
   for (Var *var = globals; var; var = var->next)
     if (strlen(var->name) == token->len &&
@@ -96,12 +106,21 @@ static Node *new_num_node(long val) {
   return node;
 }
 
+static void push_scope(Var *var) {
+  VarScope *sc = calloc(1, sizeof(VarScope));
+  sc->next = var_scope;
+  sc->depth = scope_depth;
+  sc->var = var;
+  var_scope = sc;
+}
+
 static Var *new_lvar(char *name, Type *type) {
   Var *var = calloc(1, sizeof(Var));
   var->name = name;
   var->next = locals;
   var->type = type;
   var->is_local = true;
+  push_scope(var);
   locals = var;
   return var;
 }
@@ -273,6 +292,16 @@ static Node *compound_stmt() {
   return head.next;
 }
 
+static void enter_scope() {
+  scope_depth++;
+}
+
+static void leave_scope() {
+  scope_depth--;
+  while (var_scope && var_scope->depth > scope_depth)
+    var_scope = var_scope->next;
+}
+
 // funcdef = typespec func_name "(" func_params ")" "{" compound_stmt "}"
 static Function *funcdef() {
   locals = NULL;
@@ -281,6 +310,8 @@ static Function *funcdef() {
   typespec();
   fn->name = strndup(current_token->str, current_token->len);
   current_token = current_token->next;
+
+  enter_scope();
 
   // Params
   skip("(");
@@ -295,6 +326,8 @@ static Function *funcdef() {
   fn->node = block_node;
   fn->locals = locals;
   skip("}");
+
+  leave_scope();
 
   return fn;
 }
@@ -358,9 +391,11 @@ static Node *stmt() {
   }
 
   if (consume("{")) {
+    enter_scope();
     Node *node = new_node(ND_BLOCK);
     node->body = compound_stmt();
     skip("}");
+    leave_scope();
     return node;
   }
 
