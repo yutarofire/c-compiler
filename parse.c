@@ -19,7 +19,7 @@ static Var *global_var();
 static Function *funcdef();
 static Type *typespec();
 static void func_params();
-static Node *declarator(Type *type);
+static Type *declarator(Type *type);
 static Node *compound_stmt();
 static Node *declaration();
 static Node *stmt();
@@ -114,11 +114,11 @@ static void push_scope(Var *var) {
   var_scope = sc;
 }
 
-static Var *new_lvar(char *name, Type *type) {
+static Var *new_lvar(Type *ty) {
   Var *var = calloc(1, sizeof(Var));
-  var->name = name;
+  var->name = strndup(ty->name->str, ty->name->len);
   var->next = locals;
-  var->type = type;
+  var->type = ty;
   var->is_local = true;
   push_scope(var);
   locals = var;
@@ -174,8 +174,8 @@ static Program *program() {
 
   while (current_token->kind != TK_EOF) {
     Token *tmp = current_token;
-    Type *ty = typespec();
-    declarator(ty);
+    Type *base_ty = typespec();
+    declarator(base_ty);
     bool is_func = equal(current_token, "(");
     current_token = tmp;
 
@@ -208,8 +208,8 @@ static Program *program() {
 // global_var = typespec declarator ";"
 static Var *global_var() {
   Type *base_ty = typespec();
-  Node *node = declarator(base_ty);
-  new_gvar(node->var->name, node->var->type);
+  Type *ty = declarator(base_ty);
+  new_gvar(strndup(ty->name->str, ty->name->len), ty);
   skip(";");
 }
 
@@ -219,8 +219,9 @@ static void func_params() {
   while (!equal(current_token, ")")) {
     if (i != 0)
       skip(",");
-    Type *type = typespec();
-    declarator(type);
+    Type *base_ty = typespec();
+    Type *ty = declarator(base_ty);
+    new_lvar(ty);
     i++;
   }
 }
@@ -237,14 +238,14 @@ static Type *typespec() {
 }
 
 // declarator = "*"* ident ("[" num "]")?
-static Node *declarator(Type *type) {
+static Type *declarator(Type *type) {
   while (consume("*"))
     type = pointer_to(type);
 
   if (current_token->kind != TK_IDENT)
     error_at(current_token->str, "expected a variable name");
 
-  char *name = strndup(current_token->str, current_token->len);
+  Token *name_tok = current_token;
   current_token = current_token->next;
 
   if (equal(current_token, "[")) {
@@ -256,16 +257,17 @@ static Node *declarator(Type *type) {
     skip("]");
   }
 
-  Var *var = new_lvar(name, type);
-  Node *node = new_node(ND_VAR);
-  node->var = var;
-  return node;
+  type->name = name_tok;
+  return type;
 }
 
 // declaration = typespec declarator ("=" expr)? ";"
 static Node *declaration() {
-  Type *type = typespec();
-  Node *var_node = declarator(type);
+  Type *base_ty = typespec();
+  Type *ty = declarator(base_ty);
+  Var *var = new_lvar(ty);
+  Node *var_node = new_node(ND_VAR);
+  var_node->var = var;
 
   if (consume("=")) {
     Node *assign_node = new_binary_node(ND_ASSIGN, var_node, expr());
@@ -277,21 +279,6 @@ static Node *declaration() {
   return new_unary_node(ND_EXPR_STMT, var_node);
 }
 
-// compound_stmt = (declaration | stmt)*
-static Node *compound_stmt() {
-  Node head = {};
-  Node *cur = &head;
-  while (!equal(current_token, "}")) {
-    if (equal(current_token, "int") ||
-        equal(current_token, "char"))
-      cur = cur->next = declaration();
-    else
-      cur = cur->next = stmt();
-    add_type(cur);
-  }
-  return head.next;
-}
-
 static void enter_scope() {
   scope_depth++;
 }
@@ -300,6 +287,27 @@ static void leave_scope() {
   scope_depth--;
   while (var_scope && var_scope->depth > scope_depth)
     var_scope = var_scope->next;
+}
+
+// compound_stmt = (declaration | stmt)*
+static Node *compound_stmt() {
+  Node head = {};
+  Node *cur = &head;
+
+  enter_scope();
+
+  while (!equal(current_token, "}")) {
+    if (equal(current_token, "int") ||
+        equal(current_token, "char"))
+      cur = cur->next = declaration();
+    else
+      cur = cur->next = stmt();
+    add_type(cur);
+  }
+
+  leave_scope();
+
+  return head.next;
 }
 
 // funcdef = typespec func_name "(" func_params ")" "{" compound_stmt "}"
@@ -391,11 +399,9 @@ static Node *stmt() {
   }
 
   if (consume("{")) {
-    enter_scope();
     Node *node = new_node(ND_BLOCK);
     node->body = compound_stmt();
     skip("}");
-    leave_scope();
     return node;
   }
 
