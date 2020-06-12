@@ -37,7 +37,7 @@ static Node *primary();
  * Production rules:
  *   program = (global_var | funcdef)*
  *   funcdef = typespec func_name "(" func_params ")" "{" compound_stmt "}"
- *   typespec = "int"
+ *   typespec = "int" | "char"
  *   func_params = typespec declarator ("," typespec declarator)*
  *   declarator = "*"* ident ("[" num "]")?
  *   compound_stmt = (declaration | stmt)*
@@ -226,7 +226,7 @@ static void func_params() {
   }
 }
 
-// typespec = "int"
+// typespec = "int" | "char"
 static Type *typespec() {
   if (consume("int"))
     return type_int;
