@@ -186,7 +186,7 @@ static Program *program() {
     }
 
     // Gloval variable
-    Var *gvar = global_var();
+    global_var();
   }
 
   // Assign offsets to local variables.
@@ -209,8 +209,9 @@ static Program *program() {
 static Var *global_var() {
   Type *base_ty = typespec();
   Type *ty = declarator(base_ty);
-  new_gvar(strndup(ty->name->loc, ty->name->len), ty);
+  Var *var = new_gvar(strndup(ty->name->loc, ty->name->len), ty);
   skip(";");
+  return var;
 }
 
 // func_params = typespec declarator ("," typespec declarator)*
@@ -234,13 +235,11 @@ static Type *func_params(Type *ty) {
 
 // typespec = "int" | "char"
 static Type *typespec() {
-  if (consume("int"))
-    return type_int;
-
   if (consume("char"))
     return type_char;
 
-  error_at(current_token->loc, "invalid type");
+  skip("int");
+  return type_int;
 }
 
 // declarator = "*"* ident ("[" num "]")?
