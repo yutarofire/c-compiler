@@ -11,6 +11,13 @@ Type *pointer_to(Type *base) {
   return ty;
 }
 
+Type *func_type(Type *return_ty) {
+  Type *ty = calloc(1, sizeof(Type));
+  ty->kind = TY_FUNC;
+  ty->return_ty = return_ty;
+  return ty;
+}
+
 Type *array_of(Type *base, int len) {
   Type *ty = calloc(1, sizeof(Type));
   ty->kind = TY_ARRAY;

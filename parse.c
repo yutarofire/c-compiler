@@ -18,7 +18,7 @@ static Program *program();
 static Var *global_var();
 static Function *funcdef();
 static Type *typespec();
-static void func_params();
+static Type *func_params(Type *ty);
 static Type *declarator(Type *type);
 static Node *compound_stmt();
 static Node *declaration();
@@ -214,16 +214,22 @@ static Var *global_var() {
 }
 
 // func_params = typespec declarator ("," typespec declarator)*
-static void func_params() {
-  int i = 0;
+static Type *func_params(Type *ty) {
+  Type head = {};
+  Type *cur = &head;
+
   while (!equal(current_token, ")")) {
-    if (i != 0)
+    if (cur != &head)
       skip(",");
     Type *base_ty = typespec();
-    Type *ty = declarator(base_ty);
-    new_lvar(ty);
-    i++;
+    Type *param_ty = declarator(base_ty);
+    new_lvar(param_ty);
+    cur = cur->next = param_ty;
   }
+
+  ty = func_type(ty);
+  ty->params = head.next;
+  return ty;
 }
 
 // typespec = "int" | "char"
@@ -315,7 +321,8 @@ static Function *funcdef() {
   locals = NULL;
   Function *fn = calloc(1, sizeof(Function));
 
-  typespec();
+  Type *base_ty = typespec();
+
   fn->name = strndup(current_token->loc, current_token->len);
   current_token = current_token->next;
 
@@ -323,7 +330,7 @@ static Function *funcdef() {
 
   // Params
   skip("(");
-  func_params();
+  func_params(base_ty);
   fn->params = locals;
   skip(")");
 

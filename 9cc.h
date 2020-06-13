@@ -138,24 +138,33 @@ typedef enum {
   TY_INT,
   TY_CHAR,
   TY_PTR,
+  TY_FUNC,
   TY_ARRAY,
 } TypeKind;
 
 struct Type {
   TypeKind kind;
   int size; // sizeof() value
-  Token *name;
 
   // Pointer or Array
   Type *base;
 
+  // Declaration
+  Token *name;
+
   // TY_ARRAY
   int array_len;
+
+  // Function type
+  Type *return_ty;
+  Type *params;
+  Type *next;
 };
 
 extern Type *type_int;
 extern Type *type_char;
 Type *pointer_to(Type *base);
+Type *func_type(Type *return_ty);
 Type *array_of(Type *base, int len);
 bool is_integer(Type *type);
 void add_type(Node *node);
