@@ -28,7 +28,7 @@ struct Token {
   Token *next;
 
   long val;  // For TK_NUM, number value
-  char *str; // Rested string
+  char *loc; // Token location
   int len;   // Token length
 
   // String literal

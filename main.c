@@ -37,7 +37,7 @@ void debug_token(Token *token) {
         break;
     }
     printf("\n");
-    printf("str: \"%s\"\n", tk->str);
+    printf("loc: \"%s\"\n", tk->loc);
     printf("val: %ld\n", tk->val);
     printf("len: %d\n", tk->len);
     printf("\n");

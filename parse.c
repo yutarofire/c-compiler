@@ -70,12 +70,12 @@ static Node *primary();
 static Var *find_var(Token *token) {
   for (VarScope *sc = var_scope; sc; sc = sc->next)
     if (strlen(sc->var->name) == token->len &&
-        !strncmp(token->str, sc->var->name, token->len))
+        !strncmp(token->loc, sc->var->name, token->len))
       return sc->var;
 
   for (Var *var = globals; var; var = var->next)
     if (strlen(var->name) == token->len &&
-        !strncmp(token->str, var->name, token->len))
+        !strncmp(token->loc, var->name, token->len))
       return var;
 
   return NULL;
@@ -116,7 +116,7 @@ static void push_scope(Var *var) {
 
 static Var *new_lvar(Type *ty) {
   Var *var = calloc(1, sizeof(Var));
-  var->name = strndup(ty->name->str, ty->name->len);
+  var->name = strndup(ty->name->loc, ty->name->len);
   var->next = locals;
   var->type = ty;
   var->is_local = true;
@@ -137,13 +137,13 @@ static Var *new_gvar(char *name, Type *type) {
 
 static int get_number(Token *token) {
   if (token->kind != TK_NUM)
-    error_at(token->str, "expected a number");
+    error_at(token->loc, "expected a number");
   return token->val;
 }
 
 static bool equal(Token *token, char *op) {
   return strlen(op) == token->len &&
-         !strncmp(token->str, op, token->len);
+         !strncmp(token->loc, op, token->len);
 }
 
 // 次のtokenが期待しているcharのとき、tokenを1つ進めて
@@ -159,7 +159,7 @@ static void skip(char *op) {
   if (consume(op))
     return;
   else
-    error_at(current_token->str, "Not '%s'", op);
+    error_at(current_token->loc, "Not '%s'", op);
 }
 
 static int align_to(int n, int align) {
@@ -209,7 +209,7 @@ static Program *program() {
 static Var *global_var() {
   Type *base_ty = typespec();
   Type *ty = declarator(base_ty);
-  new_gvar(strndup(ty->name->str, ty->name->len), ty);
+  new_gvar(strndup(ty->name->loc, ty->name->len), ty);
   skip(";");
 }
 
@@ -234,7 +234,7 @@ static Type *typespec() {
   if (consume("char"))
     return type_char;
 
-  error_at(current_token->str, "invalid type");
+  error_at(current_token->loc, "invalid type");
 }
 
 // declarator = "*"* ident ("[" num "]")?
@@ -243,7 +243,7 @@ static Type *declarator(Type *type) {
     type = pointer_to(type);
 
   if (current_token->kind != TK_IDENT)
-    error_at(current_token->str, "expected a variable name");
+    error_at(current_token->loc, "expected a variable name");
 
   Token *name_tok = current_token;
   current_token = current_token->next;
@@ -251,7 +251,7 @@ static Type *declarator(Type *type) {
   if (equal(current_token, "[")) {
     skip("[");
     if (current_token->kind != TK_NUM)
-      error_at(current_token->str, "expected a number");
+      error_at(current_token->loc, "expected a number");
     type = array_of(type, current_token->val);
     current_token = current_token->next;
     skip("]");
@@ -316,7 +316,7 @@ static Function *funcdef() {
   Function *fn = calloc(1, sizeof(Function));
 
   typespec();
-  fn->name = strndup(current_token->str, current_token->len);
+  fn->name = strndup(current_token->loc, current_token->len);
   current_token = current_token->next;
 
   enter_scope();
@@ -464,7 +464,7 @@ static Node *new_add_node(Node *lhs, Node *rhs) {
     return new_binary_node(ND_ADD, lhs, rhs);
 
   if (lhs->type->base && rhs->type->base)
-    error(current_token->str, "invalid operands");
+    error(current_token->loc, "invalid operands");
 
   // ptr + num
   return new_binary_node(
@@ -508,7 +508,7 @@ static Node *new_sub_node(Node *lhs, Node *rhs) {
     );
   }
 
-  error_at(current_token->str, "invalid operand of \"-\"");
+  error_at(current_token->loc, "invalid operand of \"-\"");
 }
 
 // add = mul ("+" mul | "-" mul)*
@@ -633,7 +633,7 @@ static Node *primary() {
     // Function call
     if (equal(current_token->next, "(")) {
       Node *funcall_node = new_node(ND_FUNCALL);
-      funcall_node->funcname = strndup(current_token->str, current_token->len);
+      funcall_node->funcname = strndup(current_token->loc, current_token->len);
       current_token = current_token->next;
       skip("(");
 
@@ -647,7 +647,7 @@ static Node *primary() {
     // Variable
     Var *var = find_var(current_token);
     if (!var)
-      error_at(current_token->str, "undefined variable");
+      error_at(current_token->loc, "undefined variable");
     Node *node = new_node(ND_VAR);
     node->var = var;
     current_token = current_token->next;
@@ -668,7 +668,7 @@ static Node *primary() {
     return node;
   }
 
-  error_at(current_token->str, "unexpected token");
+  error_at(current_token->loc, "unexpected token");
 }
 
 Program *parse(Token *token) {
@@ -676,7 +676,7 @@ Program *parse(Token *token) {
   Program *prog = program();
 
   if (current_token->kind != TK_EOF)
-    error_at(current_token->str, "extra token");
+    error_at(current_token->loc, "extra token");
 
   return prog;
 }
