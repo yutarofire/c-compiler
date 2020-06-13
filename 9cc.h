@@ -129,7 +129,7 @@ typedef struct {
   Function *funcs;
 } Program;
 
-Program *parse(Token *token);
+Program *parse(Token *tok);
 
 /*
  * type.c

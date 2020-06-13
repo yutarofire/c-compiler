@@ -67,15 +67,15 @@ static Node *primary();
  */
 
 // Find local variable by name.
-static Var *find_var(Token *token) {
+static Var *find_var(Token *tok) {
   for (VarScope *sc = var_scope; sc; sc = sc->next)
-    if (strlen(sc->var->name) == token->len &&
-        !strncmp(token->loc, sc->var->name, token->len))
+    if (strlen(sc->var->name) == tok->len &&
+        !strncmp(tok->loc, sc->var->name, tok->len))
       return sc->var;
 
   for (Var *var = globals; var; var = var->next)
-    if (strlen(var->name) == token->len &&
-        !strncmp(token->loc, var->name, token->len))
+    if (strlen(var->name) == tok->len &&
+        !strncmp(tok->loc, var->name, tok->len))
       return var;
 
   return NULL;
@@ -135,15 +135,15 @@ static Var *new_gvar(char *name, Type *type) {
   return var;
 }
 
-static int get_number(Token *token) {
-  if (token->kind != TK_NUM)
-    error_at(token->loc, "expected a number");
-  return token->val;
+static int get_number(Token *tok) {
+  if (tok->kind != TK_NUM)
+    error_at(tok->loc, "expected a number");
+  return tok->val;
 }
 
-static bool equal(Token *token, char *op) {
-  return strlen(op) == token->len &&
-         !strncmp(token->loc, op, token->len);
+static bool equal(Token *tok, char *op) {
+  return strlen(op) == tok->len &&
+         !strncmp(tok->loc, op, tok->len);
 }
 
 // 次のtokenが期待しているcharのとき、tokenを1つ進めて
@@ -671,8 +671,8 @@ static Node *primary() {
   error_at(current_token->loc, "unexpected token");
 }
 
-Program *parse(Token *token) {
-  current_token = token;
+Program *parse(Token *tok) {
+  current_token = tok;
   Program *prog = program();
 
   if (current_token->kind != TK_EOF)
