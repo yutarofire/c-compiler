@@ -65,11 +65,11 @@ static void gen_expr(Node *node) {
     case ND_VAR:
     case ND_MEMBER:
       gen_addr(node);
-      load(node->type);
+      load(node->ty);
       return;
     case ND_DEREF:
       gen_expr(node->lhs);
-      load(node->type);
+      load(node->ty);
       return;
     case ND_ADDR:
       gen_addr(node->lhs);
@@ -78,7 +78,7 @@ static void gen_expr(Node *node) {
       gen_expr(node->rhs);
       gen_addr(node->lhs);
       // FIXME: here
-      store(node->type);
+      store(node->ty);
       return;
     case ND_FUNCALL: {
       int nargs = 0;

@@ -92,7 +92,7 @@ typedef struct Node Node;
 struct Node {
   NodeKind kind;
   Node *next;
-  Type *type;
+  Type *ty;
 
   Node *lhs; // Left-hand side
   Node *rhs; // Right-hand side

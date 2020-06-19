@@ -123,7 +123,7 @@ void debug_node(Node *node) {
   }
 
   printf("type: ");
-  switch (node->type->kind) {
+  switch (node->ty->kind) {
     case TY_INT:
       printf("TY_INT\n");
       return;

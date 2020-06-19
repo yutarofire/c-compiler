@@ -519,10 +519,10 @@ static Node *new_add_node(Node *lhs, Node *rhs) {
   add_type(rhs);
 
   // num + num
-  if (is_integer(lhs->type) && is_integer(rhs->type))
+  if (is_integer(lhs->ty) && is_integer(rhs->ty))
     return new_binary_node(ND_ADD, lhs, rhs);
 
-  if (lhs->type->base && rhs->type->base)
+  if (lhs->ty->base && rhs->ty->base)
     error(current_token->loc, "invalid operands");
 
   // ptr + num
@@ -532,7 +532,7 @@ static Node *new_add_node(Node *lhs, Node *rhs) {
     new_binary_node(
       ND_MUL,
       rhs,
-      new_num_node(lhs->type->base->size)
+      new_num_node(lhs->ty->base->size)
     )
   );
 }
@@ -542,24 +542,24 @@ static Node *new_sub_node(Node *lhs, Node *rhs) {
   add_type(rhs);
 
   // num - num
-  if (is_integer(lhs->type) && is_integer(rhs->type))
+  if (is_integer(lhs->ty) && is_integer(rhs->ty))
     return new_binary_node(ND_SUB, lhs, rhs);
 
   // ptr - num
-  if (lhs->type->kind == TY_PTR && is_integer(rhs->type)) {
+  if (lhs->ty->kind == TY_PTR && is_integer(rhs->ty)) {
     return new_binary_node(
         ND_SUB,
         lhs,
         new_binary_node(
           ND_MUL,
           rhs,
-          new_num_node(lhs->type->base->size)
+          new_num_node(lhs->ty->base->size)
         )
     );
   }
 
   // ptr - ptr
-  if (lhs->type->kind == TY_PTR && rhs->type->kind == TY_PTR) {
+  if (lhs->ty->kind == TY_PTR && rhs->ty->kind == TY_PTR) {
     return new_binary_node(
         ND_DIV,
         new_binary_node(ND_SUB, lhs, rhs),
@@ -617,7 +617,7 @@ static Node *unary() {
   if (consume("sizeof")) {
     Node *node = unary();
     add_type(node);
-    return new_num_node(node->type->size);
+    return new_num_node(node->ty->size);
   }
 
   return postfix();
@@ -647,10 +647,10 @@ static Node *postfix() {
 
   if (consume(".")) {
     add_type(node);
-    if (node->type->kind != TY_STRUCT)
+    if (node->ty->kind != TY_STRUCT)
       error_at(current_token->loc, "not a struct");
 
-    Member *mem = get_struct_member(node->type);
+    Member *mem = get_struct_member(node->ty);
     node = new_unary_node(ND_MEMBER, node);
     node->member = mem;
     current_token = current_token->next;

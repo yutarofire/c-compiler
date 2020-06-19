@@ -32,7 +32,7 @@ bool is_integer(Type *type) {
 }
 
 void add_type(Node *node) {
-  if (!node || node->type)
+  if (!node || node->ty)
     return;
 
   add_type(node->lhs);
@@ -54,7 +54,7 @@ void add_type(Node *node) {
     case ND_MUL:
     case ND_DIV:
     case ND_ASSIGN:
-      node->type = node->lhs->type;
+      node->ty = node->lhs->ty;
       return;
     case ND_EQ:
     case ND_NE:
@@ -64,28 +64,28 @@ void add_type(Node *node) {
     case ND_LEE:
     case ND_NUM:
     case ND_FUNCALL:
-      node->type = type_int;
+      node->ty = type_int;
       return;
     case ND_VAR:
-      node->type = node->var->type;
+      node->ty = node->var->type;
       return;
     case ND_MEMBER:
-      node->type = node->member->ty;
+      node->ty = node->member->ty;
       return;
     case ND_ADDR:
-      if (node->lhs->type->kind == TY_ARRAY)
-        node->type = pointer_to(node->lhs->type->base);
+      if (node->lhs->ty->kind == TY_ARRAY)
+        node->ty = pointer_to(node->lhs->ty->base);
       else
-        node->type = pointer_to(node->lhs->type);
+        node->ty = pointer_to(node->lhs->ty);
       return;
     case ND_DEREF:
-      node->type = node->lhs->type->base;
+      node->ty = node->lhs->ty->base;
       return;
     case ND_STMT_EXPR: {
       Node *stmt = node->body;
       while (stmt->next)
         stmt = stmt->next;
-      node->type = stmt->lhs->type;
+      node->ty = stmt->lhs->ty;
       return;
     }
   }
