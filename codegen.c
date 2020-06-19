@@ -37,7 +37,7 @@ static void gen_expr();
 static void gen_stmt();
 
 // Pushes the given node's address to the stack.
-static void gen_var(Node *node) {
+static void gen_addr(Node *node) {
   switch (node->kind) {
     case ND_VAR:
       if (node->var->is_local)
@@ -47,6 +47,10 @@ static void gen_var(Node *node) {
       return;
     case ND_DEREF:
       gen_expr(node->lhs);
+      return;
+    case ND_MEMBER:
+      gen_addr(node->lhs);
+      printf("  add %s, %d\n", reg(top - 1), node->member->offset);
       return;
   }
 
@@ -59,7 +63,8 @@ static void gen_expr(Node *node) {
       printf("  mov %s, %ld\n", reg(top++), node->val);
       return;
     case ND_VAR:
-      gen_var(node);
+    case ND_MEMBER:
+      gen_addr(node);
       load(node->type);
       return;
     case ND_DEREF:
@@ -67,11 +72,12 @@ static void gen_expr(Node *node) {
       load(node->type);
       return;
     case ND_ADDR:
-      gen_var(node->lhs);
+      gen_addr(node->lhs);
       return;
     case ND_ASSIGN:
       gen_expr(node->rhs);
-      gen_var(node->lhs);
+      gen_addr(node->lhs);
+      // FIXME: here
       store(node->type);
       return;
     case ND_FUNCALL: {

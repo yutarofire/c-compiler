@@ -68,7 +68,10 @@ static bool is_alnum(char c) {
          ('0' <= c && c <= '9') || c == '_';
 }
 
-static char *keywords[] = {"return", "if", "else", "for", "while", "sizeof", "int", "char"};
+static char *keywords[] = {
+  "return", "if", "else", "for", "while", "sizeof", "int", "char",
+  "struct"
+};
 
 static char read_escaped_char(char *p) {
   switch (*p) {
@@ -200,7 +203,7 @@ Token *tokenize(char *p) {
         starts_with(p, "{") || starts_with(p, "}") ||
         starts_with(p, "*") || starts_with(p, "&") ||
         starts_with(p, "[") || starts_with(p, "]") ||
-        starts_with(p, ",")) {
+        starts_with(p, ",") || starts_with(p, ".")) {
       cur = new_token(TK_RESERVED, cur, p++, 1);
       continue;
     }

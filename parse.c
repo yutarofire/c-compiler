@@ -18,6 +18,7 @@ static Program *program();
 static Var *global_var();
 static Function *funcdef();
 static Type *typespec();
+static Type *struct_decl();
 static Type *func_params(Type *ty);
 static Type *declarator(Type *type);
 static Node *compound_stmt();
@@ -37,7 +38,8 @@ static Node *primary();
  * Production rules:
  *   program = (global_var | funcdef)*
  *   funcdef = typespec func_name "(" func_params ")" "{" compound_stmt "}"
- *   typespec = "int" | "char"
+ *   typespec = "int" | "char" | struct_decl
+ *   struct_decl = "struct" "{" struct_members "}"
  *   func_params = typespec declarator ("," typespec declarator)*
  *   declarator = "*"* ident ("[" num "]")?
  *   compound_stmt = (declaration | stmt)*
@@ -58,7 +60,7 @@ static Node *primary();
  *   unary = ("+" | "-" | "*" | "&") unary
  *         | "sizeof" unary
  *         | postfix
- *   postfix = primary ("[" expr "]")*
+ *   postfix = primary ("[" expr "]" | "." ident)*
  *   primary = "(" "{" compound_stmt "}" ")"
  *           | "(" expr ")"
  *           | ident ("(" func_args? ")")?
@@ -233,13 +235,61 @@ static Type *func_params(Type *ty) {
   return ty;
 }
 
-// typespec = "int" | "char"
+// typespec = "int" | "char" | struct_decl
 static Type *typespec() {
   if (consume("char"))
     return type_char;
 
-  skip("int");
-  return type_int;
+  if (consume("int"))
+    return type_int;
+
+  if (equal(current_token, "struct"))
+    return struct_decl();
+
+  error_at(current_token->loc, "typename expected");
+}
+
+// struct_members = (typespec declarator ";")*
+static Member *struct_members() {
+  Member head = {};
+  Member *cur = &head;
+
+  while (!equal(current_token, "}")) {
+    Type *base_ty = typespec();
+    Type *ty = declarator(base_ty);
+
+    Member *mem = calloc(1, sizeof(Member));
+    mem->ty = ty;
+    mem->name = ty->name;
+    cur = cur->next = mem;
+
+    skip(";");
+  }
+
+  return head.next;
+}
+
+// struct_decl = "struct" "{" struct_members "}"
+static Type *struct_decl() {
+  skip("struct");
+  skip("{");
+
+  // Construct a struct object.
+  Type *ty = calloc(1, sizeof(Type));
+  ty->kind = TY_STRUCT;
+  ty->members = struct_members();
+
+  // Assign offsets to members.
+  int offset = 0;
+  for (Member *mem = ty->members; mem; mem = mem->next) {
+    mem->offset = offset;
+    offset += mem->ty->size;
+  }
+  ty->size = offset;
+
+  skip("}");
+
+  return ty;
 }
 
 // declarator = "*"* ident ("[" num "]")?
@@ -294,6 +344,10 @@ static void leave_scope() {
     var_scope = var_scope->next;
 }
 
+static bool is_typename(Token *tok) {
+  equal(tok, "int") || equal(tok, "char") || equal(tok, "struct");
+}
+
 // compound_stmt = (declaration | stmt)*
 static Node *compound_stmt() {
   Node head = {};
@@ -302,8 +356,7 @@ static Node *compound_stmt() {
   enter_scope();
 
   while (!equal(current_token, "}")) {
-    if (equal(current_token, "int") ||
-        equal(current_token, "char"))
+    if (is_typename(current_token))
       cur = cur->next = declaration();
     else
       cur = cur->next = stmt();
@@ -570,7 +623,16 @@ static Node *unary() {
   return postfix();
 }
 
-// postfix = primary ("[" expr "]")*
+static Member *get_struct_member(Type *ty) {
+  for (Member *mem = ty->members; mem; mem = mem->next)
+    if (mem->name->len == current_token->len &&
+        !strncmp(mem->name->loc, current_token->loc, mem->name->len))
+      return mem;
+
+  error_at(current_token->loc, "no such member");
+}
+
+// postfix = primary ("[" expr "]" | "." ident)?
 static Node *postfix() {
   Node *node = primary();
 
@@ -581,6 +643,17 @@ static Node *postfix() {
       new_add_node(node, idx)
     );
     skip("]");
+  }
+
+  if (consume(".")) {
+    add_type(node);
+    if (node->type->kind != TY_STRUCT)
+      error_at(current_token->loc, "not a struct");
+
+    Member *mem = get_struct_member(node->type);
+    node = new_unary_node(ND_MEMBER, node);
+    node->member = mem;
+    current_token = current_token->next;
   }
 
   return node;
@@ -613,11 +686,11 @@ static Var *new_string_literal(Token *tok) {
   return var;
 }
 
-//   primary = "(" "{" compound_stmt "}" ")"
-//           | "(" expr ")"
-//           | ident args?
-//           | str
-//           | num
+// primary = "(" "{" compound_stmt "}" ")"
+//         | "(" expr ")"
+//         | ident args?
+//         | str
+//         | num
 // args = "(" func_args? ")"
 static Node *primary() {
   if (equal(current_token, "(") && equal(current_token->next, "{")) {
