@@ -50,7 +50,7 @@ typedef struct Var Var;
 struct Var {
   Var *next;
   char *name;
-  Type *type;
+  Type *ty;
   bool is_local;
 
   // Local variable

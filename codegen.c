@@ -259,7 +259,7 @@ static void emit_text(Function *funcs) {
     for (Var *param = fn->params; param; param = param->next)
       i++;
     for (Var *param = fn->params; param; param = param->next) {
-      if (param->type->size == 1)
+      if (param->ty->size == 1)
         printf("  mov [rbp-%d], %s\n", param->offset, argreg8[--i]);
       else
         printf("  mov [rbp-%d], %s\n", param->offset, argreg64[--i]);
@@ -290,11 +290,11 @@ static void emit_data(Var *globals) {
     printf("%s:\n", gvar->name);
 
     if (!gvar->init_data) {
-      printf("  .zero %d\n", gvar->type->size);
+      printf("  .zero %d\n", gvar->ty->size);
       continue;
     }
 
-    for (int i = 0; i < gvar->type->size; i++)
+    for (int i = 0; i < gvar->ty->size; i++)
       printf("  .byte %d\n", gvar->init_data[i]);
   }
 }

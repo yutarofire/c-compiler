@@ -120,18 +120,18 @@ static Var *new_lvar(Type *ty) {
   Var *var = calloc(1, sizeof(Var));
   var->name = strndup(ty->name->loc, ty->name->len);
   var->next = locals;
-  var->type = ty;
+  var->ty = ty;
   var->is_local = true;
   push_scope(var);
   locals = var;
   return var;
 }
 
-static Var *new_gvar(char *name, Type *type) {
+static Var *new_gvar(char *name, Type *ty) {
   Var *var = calloc(1, sizeof(Var));
   var->name = name;
   var->next = globals;
-  var->type = type;
+  var->ty = ty;
   var->is_local = false;
   globals = var;
   return var;
@@ -195,7 +195,7 @@ static Program *program() {
   for (Function *fn = head.next; fn; fn = fn->next) {
     int offset = 32; // 32 for callee-saved registers
     for (Var *var = fn->locals; var; var = var->next) {
-      offset += var->type->size;
+      offset += var->ty->size;
       var->offset = offset;
     }
     fn->stack_size = align_to(offset, 16);
