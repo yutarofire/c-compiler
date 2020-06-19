@@ -164,10 +164,6 @@ static void skip(char *op) {
     error_at(current_token->loc, "Not '%s'", op);
 }
 
-static int align_to(int n, int align) {
-  return (n + align - 1) & ~(align - 1);
-}
-
 // program = (global_var | funcdef)*
 static Program *program() {
   Function head = {};
@@ -282,10 +278,14 @@ static Type *struct_decl() {
   // Assign offsets to members.
   int offset = 0;
   for (Member *mem = ty->members; mem; mem = mem->next) {
+    offset = align_to(offset, mem->ty->align);
     mem->offset = offset;
     offset += mem->ty->size;
+
+    if (ty->align < mem->ty->align)
+      ty->align = mem->ty->align;
   }
-  ty->size = offset;
+  ty->size = align_to(offset, ty->align);
 
   skip("}");
 

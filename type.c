@@ -1,17 +1,23 @@
 #include "9cc.h"
 
-Type *type_int = &(Type){TY_INT, 8};
-Type *type_char = &(Type){TY_CHAR, 1};
+Type *type_int = &(Type){TY_INT, 8, 8};
+Type *type_char = &(Type){TY_CHAR, 1, 1};
 
-static Type *new_type(TypeKind kind, int size) {
+static Type *new_type(TypeKind kind, int size, int align) {
   Type *ty = calloc(1, sizeof(Type));
   ty->kind = kind;
   ty->size = size;
+  ty->align = align;
   return ty;
 }
 
+int align_to(int n, int align) {
+  // `align` must be 2**i.
+  return (n + align - 1) & ~(align - 1);
+}
+
 Type *pointer_to(Type *base) {
-  Type *ty = new_type(TY_PTR, 8);
+  Type *ty = new_type(TY_PTR, 8, 8);
   ty->base = base;
   return ty;
 }
@@ -24,7 +30,7 @@ Type *func_type(Type *return_ty) {
 }
 
 Type *array_of(Type *base, int len) {
-  Type *ty = new_type(TY_ARRAY, base->size * len);
+  Type *ty = new_type(TY_ARRAY, base->size * len, base->size);
   ty->base = base;
   ty->array_len = len;
   return ty;
