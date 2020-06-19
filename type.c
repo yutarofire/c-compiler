@@ -3,10 +3,15 @@
 Type *type_int = &(Type){TY_INT, 8};
 Type *type_char = &(Type){TY_CHAR, 1};
 
-Type *pointer_to(Type *base) {
+static Type *new_type(TypeKind kind, int size) {
   Type *ty = calloc(1, sizeof(Type));
-  ty->kind = TY_PTR;
-  ty->size = 8;
+  ty->kind = kind;
+  ty->size = size;
+  return ty;
+}
+
+Type *pointer_to(Type *base) {
+  Type *ty = new_type(TY_PTR, 8);
   ty->base = base;
   return ty;
 }
@@ -19,9 +24,7 @@ Type *func_type(Type *return_ty) {
 }
 
 Type *array_of(Type *base, int len) {
-  Type *ty = calloc(1, sizeof(Type));
-  ty->kind = TY_ARRAY;
-  ty->size = base->size * len;
+  Type *ty = new_type(TY_ARRAY, base->size * len);
   ty->base = base;
   ty->array_len = len;
   return ty;
