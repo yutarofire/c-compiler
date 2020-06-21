@@ -7,66 +7,26 @@ struct VarScope {
   Var *var;
 };
 
+typedef struct TagScope TagScope;
+struct TagScope {
+  TagScope *next;
+  char *name;
+  int depth;
+  Type *ty;
+};
+
 static Token *current_token;
+
 static Var *locals;
 static Var *globals;
 
+// C has two block scope;
+// one is for variables and the other is for struct tags.
 static VarScope *var_scope;
+static TagScope *tag_scope;
+
+// scope_depth is incremented at "{" and decremented at "}".
 static int scope_depth;
-
-static Program *program();
-static Var *global_var();
-static Function *funcdef();
-static Type *typespec();
-static Type *struct_decl();
-static Type *func_params(Type *ty);
-static Type *declarator(Type *type);
-static Node *compound_stmt();
-static Node *declaration();
-static Node *stmt();
-static Node *expr();
-static Node *assign();
-static Node *equality();
-static Node *relational();
-static Node *add();
-static Node *mul();
-static Node *unary();
-static Node *postfix();
-static Node *primary();
-
-/*
- * Production rules:
- *   program = (global_var | funcdef)*
- *   funcdef = typespec func_name "(" func_params ")" "{" compound_stmt "}"
- *   typespec = "int" | "char" | struct_decl
- *   struct_decl = "struct" "{" struct_members "}"
- *   func_params = typespec declarator ("," typespec declarator)*
- *   declarator = "*"* ident ("[" num "]")?
- *   compound_stmt = (declaration | stmt)*
- *   declaration = typespec declarator ("=" expr)? ";"
- *   stmt = "return" expr ";"
- *        | "if" "(" expr ")" stmt ("else" stmt)?
- *        | "for" "(" expr_stmt? ";" expr? ";" expr_stmt? ")" stmt
- *        | "while" "(" expr ")" stmt
- *        | "{" stmt* "}"
- *        | expr_stmt ";"
- *   expr_stmt = expr
- *   expr = assign
- *   assign = equality ("=" assign)?
- *   equality = relational ("==" relational | "!=" relational)*
- *   relational = add ("<" add | "<=" add | ">=" add | ">" add)*
- *   add = mul ("+" mul | "-" mul)*
- *   mul = unary ("*" unary | "/" unary)*
- *   unary = ("+" | "-" | "*" | "&") unary
- *         | "sizeof" unary
- *         | postfix
- *   postfix = primary ("[" expr "]" | "." ident)*
- *   primary = "(" "{" compound_stmt "}" ")"
- *           | "(" expr ")"
- *           | ident ("(" func_args? ")")?
- *           | str
- *           | num
- */
 
 // Find local variable by name.
 static Var *find_var(Token *tok) {
@@ -79,6 +39,15 @@ static Var *find_var(Token *tok) {
     if (strlen(var->name) == tok->len &&
         !strncmp(tok->loc, var->name, tok->len))
       return var;
+
+  return NULL;
+}
+
+static TagScope *find_tag(Token *tag) {
+  for (TagScope *sc = tag_scope; sc; sc = sc->next)
+    if (strlen(sc->name) == tag->len &&
+        !strncmp(sc->name, tag->loc, tag->len))
+      return sc;
 
   return NULL;
 }
@@ -137,6 +106,15 @@ static Var *new_gvar(char *name, Type *ty) {
   return var;
 }
 
+static void push_tag_scope(Token *tag, Type *ty) {
+  TagScope *sc = calloc(1, sizeof(TagScope));
+  sc->next = tag_scope;
+  sc->name = strndup(tag->loc, tag->len);
+  sc->depth = scope_depth;
+  sc->ty = ty;
+  tag_scope = sc;
+}
+
 static int get_number(Token *tok) {
   if (tok->kind != TK_NUM)
     error_at(tok->loc, "expected a number");
@@ -163,6 +141,60 @@ static void skip(char *op) {
   else
     error_at(current_token->loc, "Not '%s'", op);
 }
+
+static Program *program();
+static Var *global_var();
+static Function *funcdef();
+static Type *typespec();
+static Type *struct_decl();
+static Type *func_params(Type *ty);
+static Type *declarator(Type *type);
+static Node *compound_stmt();
+static Node *declaration();
+static Node *stmt();
+static Node *expr();
+static Node *assign();
+static Node *equality();
+static Node *relational();
+static Node *add();
+static Node *mul();
+static Node *unary();
+static Node *postfix();
+static Node *primary();
+
+/*
+ * Production rules:
+ *   program = (global_var | funcdef)*
+ *   funcdef = typespec func_name "(" func_params ")" "{" compound_stmt "}"
+ *   typespec = "int" | "char" | struct_decl
+ *   struct_decl = "struct" ident? ("{" struct_members "}")?
+ *   func_params = typespec declarator ("," typespec declarator)*
+ *   declarator = "*"* ident ("[" num "]")?
+ *   compound_stmt = (declaration | stmt)*
+ *   declaration = typespec declarator ("=" expr)? ";"
+ *   stmt = "return" expr ";"
+ *        | "if" "(" expr ")" stmt ("else" stmt)?
+ *        | "for" "(" expr_stmt? ";" expr? ";" expr_stmt? ")" stmt
+ *        | "while" "(" expr ")" stmt
+ *        | "{" stmt* "}"
+ *        | expr_stmt ";"
+ *   expr_stmt = expr
+ *   expr = assign
+ *   assign = equality ("=" assign)?
+ *   equality = relational ("==" relational | "!=" relational)*
+ *   relational = add ("<" add | "<=" add | ">=" add | ">" add)*
+ *   add = mul ("+" mul | "-" mul)*
+ *   mul = unary ("*" unary | "/" unary)*
+ *   unary = ("+" | "-" | "*" | "&") unary
+ *         | "sizeof" unary
+ *         | postfix
+ *   postfix = primary ("[" expr "]" | "." ident)*
+ *   primary = "(" "{" compound_stmt "}" ")"
+ *           | "(" expr ")"
+ *           | ident ("(" func_args? ")")?
+ *           | str
+ *           | num
+ */
 
 // program = (global_var | funcdef)*
 static Program *program() {
@@ -265,9 +297,23 @@ static Member *struct_members() {
   return head.next;
 }
 
-// struct_decl = "struct" "{" struct_members "}"
+// struct_decl = "struct" ident? ("{" struct_members "}")?
 static Type *struct_decl() {
   skip("struct");
+
+  Token *tag = NULL;
+  if (current_token->kind == TK_IDENT) {
+    tag = current_token;
+    current_token = current_token->next;
+  }
+
+  if (tag && !equal(current_token, "{")) {
+    TagScope *sc = find_tag(tag);
+    if (!sc)
+      error_at(tag->loc, "unknown struct type");
+    return sc->ty;
+  }
+
   skip("{");
 
   // Construct a struct object.
@@ -288,6 +334,10 @@ static Type *struct_decl() {
   ty->size = align_to(offset, ty->align);
 
   skip("}");
+
+  // Register the struct type if a name was given.
+  if (tag)
+    push_tag_scope(tag, ty);
 
   return ty;
 }
@@ -316,22 +366,31 @@ static Type *declarator(Type *type) {
   return type;
 }
 
-// declaration = typespec declarator ("=" expr)? ";"
+// declaration = typespec (declarator ("=" expr)?)? ";"
 static Node *declaration() {
   Type *base_ty = typespec();
+
+  Node *node = new_node(ND_BLOCK);
+  node->body = NULL;
+
+  if (consume(";"))
+    return node;
+
   Type *ty = declarator(base_ty);
   Var *var = new_lvar(ty);
-  Node *var_node = new_node(ND_VAR);
-  var_node->var = var;
 
-  if (consume("=")) {
-    Node *assign_node = new_binary_node(ND_ASSIGN, var_node, expr());
+  if (!equal(current_token, "=")) {
     skip(";");
-    return new_unary_node(ND_EXPR_STMT, assign_node);
+    return node;
   }
 
+  skip("=");
+  Node *var_node = new_node(ND_VAR);
+  var_node->var = var;
+  Node *assign_node = new_binary_node(ND_ASSIGN, var_node, expr());
+  node->body = new_unary_node(ND_EXPR_STMT, assign_node);
   skip(";");
-  return new_unary_node(ND_EXPR_STMT, var_node);
+  return node;
 }
 
 static void enter_scope() {
@@ -340,8 +399,12 @@ static void enter_scope() {
 
 static void leave_scope() {
   scope_depth--;
+
   while (var_scope && var_scope->depth > scope_depth)
     var_scope = var_scope->next;
+
+  while (tag_scope && tag_scope->depth > scope_depth)
+    tag_scope = tag_scope->next;
 }
 
 static bool is_typename(Token *tok) {
