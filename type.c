@@ -1,6 +1,6 @@
 #include "9cc.h"
 
-Type *type_int = &(Type){TY_INT, 8, 8};
+Type *type_int = &(Type){TY_INT, 4, 4};
 Type *type_char = &(Type){TY_CHAR, 1, 1};
 
 static Type *new_type(TypeKind kind, int size, int align) {

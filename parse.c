@@ -626,7 +626,7 @@ static Node *new_sub_node(Node *lhs, Node *rhs) {
     return new_binary_node(
         ND_DIV,
         new_binary_node(ND_SUB, lhs, rhs),
-        new_num_node(8)
+        new_num_node(lhs->ty->base->size)
     );
   }
 

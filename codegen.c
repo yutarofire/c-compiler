@@ -3,6 +3,7 @@
 static int top;
 static int labelseq = 1;
 static char *argreg8[] = {"dil", "sil", "dl", "cl", "r8b", "r9b"};
+static char *argreg32[] = {"edi", "esi", "edx", "ecx", "r8d", "r9d"};
 static char *argreg64[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 static Function *current_func;
 
@@ -20,6 +21,8 @@ static void load(Type *ty) {
 
   if (ty->size == 1)
     printf("  movsx %s, byte ptr [%s]\n", reg(top - 1), reg(top - 1));
+  else if (ty->size == 4)
+    printf("  movsx %s, dword ptr [%s]\n", reg(top - 1), reg(top - 1));
   else
     printf("  mov %s, [%s]\n", reg(top - 1), reg(top - 1));
 }
@@ -27,6 +30,8 @@ static void load(Type *ty) {
 static void store(Type *ty) {
   if (ty->size == 1)
     printf("  mov [%s], %sb\n", reg(top - 1), reg(top - 2));
+  else if (ty->size == 4)
+    printf("  mov [%s], %sd\n", reg(top - 1), reg(top - 2));
   else
     printf("  mov [%s], %s\n", reg(top - 1), reg(top - 2));
 
@@ -77,7 +82,6 @@ static void gen_expr(Node *node) {
     case ND_ASSIGN:
       gen_expr(node->rhs);
       gen_addr(node->lhs);
-      // FIXME: here
       store(node->ty);
       return;
     case ND_FUNCALL: {
@@ -261,8 +265,12 @@ static void emit_text(Function *funcs) {
     for (Var *param = fn->params; param; param = param->next) {
       if (param->ty->size == 1)
         printf("  mov [rbp-%d], %s\n", param->offset, argreg8[--i]);
-      else
+      else if (param->ty->size == 4)
+        printf("  mov [rbp-%d], %s\n", param->offset, argreg32[--i]);
+      else if (param->ty->size == 8)
         printf("  mov [rbp-%d], %s\n", param->offset, argreg64[--i]);
+      else
+        error("unknown type size");
     }
 
     // Emit code
