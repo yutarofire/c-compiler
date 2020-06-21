@@ -188,7 +188,7 @@ static Node *primary();
  *   unary = ("+" | "-" | "*" | "&") unary
  *         | "sizeof" unary
  *         | postfix
- *   postfix = primary ("[" expr "]" | "." ident)*
+ *   postfix = primary ("[" expr "]" | "." ident | "->" indent)?
  *   primary = "(" "{" compound_stmt "}" ")"
  *           | "(" expr ")"
  *           | ident ("(" func_args? ")")?
@@ -695,7 +695,18 @@ static Member *get_struct_member(Type *ty) {
   error_at(current_token->loc, "no such member");
 }
 
-// postfix = primary ("[" expr "]" | "." ident)?
+static Node *struct_ref(Node *lhs) {
+  add_type(lhs);
+  if (lhs->ty->kind != TY_STRUCT)
+    error_at(current_token->loc, "not a struct");
+
+  Node *node = new_unary_node(ND_MEMBER, lhs);
+  Member *mem = get_struct_member(lhs->ty);
+  node->member = mem;
+  return node;
+}
+
+// postfix = primary ("[" expr "]" | "." ident | "->" indent)?
 static Node *postfix() {
   Node *node = primary();
 
@@ -709,13 +720,14 @@ static Node *postfix() {
   }
 
   if (consume(".")) {
-    add_type(node);
-    if (node->ty->kind != TY_STRUCT)
-      error_at(current_token->loc, "not a struct");
+    node = struct_ref(node);
+    current_token = current_token->next;
+  }
 
-    Member *mem = get_struct_member(node->ty);
-    node = new_unary_node(ND_MEMBER, node);
-    node->member = mem;
+  if (consume("->")) {
+    // x->y is short for (*x).y
+    node = new_unary_node(ND_DEREF, node);
+    node = struct_ref(node);
     current_token = current_token->next;
   }
 
