@@ -65,7 +65,7 @@ static void gen_addr(Node *node) {
 static void gen_expr(Node *node) {
   switch (node->kind) {
     case ND_NUM:
-      printf("  mov %s, %ld\n", reg(top++), node->val);
+      printf("  mov %s, %d\n", reg(top++), node->val);
       return;
     case ND_VAR:
     case ND_MEMBER:

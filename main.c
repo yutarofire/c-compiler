@@ -38,7 +38,7 @@ void debug_token(Token *token) {
     }
     printf("\n");
     printf("loc: \"%s\"\n", tk->loc);
-    printf("val: %ld\n", tk->val);
+    printf("val: %d\n", tk->val);
     printf("len: %d\n", tk->len);
     printf("\n");
   }
@@ -109,7 +109,7 @@ void debug_node(Node *node) {
       break;
     case ND_NUM:
       printf("ND_NUM\n");
-      printf("    val: %ld\n", node->val);
+      printf("    val: %d\n", node->val);
       break;
     case ND_DEREF:
       printf("ND_DEREF\n");

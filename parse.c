@@ -71,7 +71,7 @@ static Node *new_unary_node(NodeKind kind, Node *lhs) {
   return node;
 }
 
-static Node *new_num_node(long val) {
+static Node *new_num_node(int val) {
   Node *node = new_node(ND_NUM);
   node->val = val;
   return node;

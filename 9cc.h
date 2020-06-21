@@ -28,7 +28,7 @@ struct Token {
   TokenKind kind;
   Token *next;
 
-  long val;  // For TK_NUM, number value
+  int val;   // For TK_NUM, number value
   char *loc; // Token location
   int len;   // Token length
 
@@ -98,7 +98,7 @@ struct Node {
   Node *rhs; // Right-hand side
 
   Var *var;  // For ND_VAR
-  long val;  // For ND_NUM
+  int val;   // For ND_NUM
 
   // Block or statement-expression
   Node *body;
