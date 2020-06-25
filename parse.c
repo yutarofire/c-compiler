@@ -149,6 +149,7 @@ static Type *typespec();
 static Type *struct_decl();
 static Type *func_params(Type *ty);
 static Type *declarator(Type *type);
+static Type *type_suffix(Type *type);
 static Node *compound_stmt();
 static Node *declaration();
 static Node *stmt();
@@ -164,12 +165,15 @@ static Node *primary();
 
 /*
  * Production rules:
- *   program = (global_var | funcdef)*
+ *   program = (funcdef | global_var)*
  *   funcdef = typespec func_name "(" func_params ")" "{" compound_stmt "}"
  *   typespec = "int" | "char" | struct_decl
  *   struct_decl = "struct" ident? ("{" struct_members "}")?
  *   func_params = typespec declarator ("," typespec declarator)*
- *   declarator = "*"* ident ("[" num "]")?
+ *   declarator = "*"* ident type_suffix
+ *   type_suffix = "[" num "]"
+ *               | "(" func_params ")"
+ *               | ε
  *   compound_stmt = (declaration | stmt)*
  *   declaration = typespec declarator ("=" expr)? ";"
  *   stmt = "return" expr ";"
@@ -196,7 +200,7 @@ static Node *primary();
  *           | num
  */
 
-// program = (global_var | funcdef)*
+// program = (funcdef | global_var)*
 static Program *program() {
   Function head = {};
   Function *cur = &head;
@@ -205,12 +209,11 @@ static Program *program() {
   while (current_token->kind != TK_EOF) {
     Token *tmp = current_token;
     Type *base_ty = typespec();
-    declarator(base_ty);
-    bool is_func = equal(current_token, "(");
+    Type *ty = declarator(base_ty);
     current_token = tmp;
 
     // Function
-    if (is_func) {
+    if (ty->kind == TY_FUNC) {
       cur = cur->next = funcdef();
       continue;
     }
@@ -342,10 +345,10 @@ static Type *struct_decl() {
   return ty;
 }
 
-// declarator = "*"* ident ("[" num "]")?
-static Type *declarator(Type *type) {
+// declarator = "*"* ident type_suffix
+static Type *declarator(Type *ty) {
   while (consume("*"))
-    type = pointer_to(type);
+    ty = pointer_to(ty);
 
   if (current_token->kind != TK_IDENT)
     error_at(current_token->loc, "expected a variable name");
@@ -353,17 +356,31 @@ static Type *declarator(Type *type) {
   Token *name_tok = current_token;
   current_token = current_token->next;
 
-  if (equal(current_token, "[")) {
-    skip("[");
+  ty = type_suffix(ty);
+  ty->name = name_tok;
+  return ty;
+}
+
+// type_suffix = "[" num "]"
+//             | "(" func_params ")"
+//             | ε
+static Type *type_suffix(Type *ty) {
+  if (consume("[")) {
     if (current_token->kind != TK_NUM)
       error_at(current_token->loc, "expected a number");
-    type = array_of(type, current_token->val);
+    ty = array_of(ty, current_token->val);
     current_token = current_token->next;
     skip("]");
+    return ty;
   }
 
-  type->name = name_tok;
-  return type;
+  if (consume("(")) {
+    ty = func_params(ty);
+    skip(")");
+    return ty;
+  }
+
+  return ty;
 }
 
 // declaration = typespec (declarator ("=" expr)?)? ";"
