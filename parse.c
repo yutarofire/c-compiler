@@ -210,6 +210,12 @@ static Program *program() {
     Token *tmp = current_token;
     Type *base_ty = typespec();
     Type *ty = declarator(base_ty);
+
+    // Function declaration
+    if (ty->kind == TY_FUNC && consume(";")) {
+      continue;
+    }
+
     current_token = tmp;
 
     // Function
