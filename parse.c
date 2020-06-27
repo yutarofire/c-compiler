@@ -272,8 +272,12 @@ static Type *func_params(Type *ty) {
   return ty;
 }
 
-// typespec = "int" | "char" | struct_decl
+// typespec = "void" | "char" | "int"
+//          | struct_decl
 static Type *typespec() {
+  if (consume("void"))
+    return ty_void;
+
   if (consume("char"))
     return ty_char;
 
@@ -400,6 +404,9 @@ static Node *declaration() {
     return node;
 
   Type *ty = declarator(base_ty);
+  if (ty->kind == TY_VOID)
+    error_at(current_token->loc, "variable declared void");
+
   Var *var = new_lvar(ty);
 
   if (!equal(current_token, "=")) {
@@ -431,7 +438,7 @@ static void leave_scope() {
 }
 
 static bool is_typename(Token *tok) {
-  equal(tok, "int") || equal(tok, "char") || equal(tok, "struct");
+  equal(tok, "void") || equal(tok, "char") || equal(tok, "int") || equal(tok, "struct");
 }
 
 // compound_stmt = (declaration | stmt)*

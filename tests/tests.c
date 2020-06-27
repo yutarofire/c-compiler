@@ -200,6 +200,8 @@ int main() {
   assert(8, ({ struct t {int a; int b;} x; struct t y; sizeof(y); }), "({ struct t {int a; int b;} x; struct t y; sizeof(y); })");
   assert(8, ({ struct t {int a; int b;}; struct t y; sizeof(y); }), "({ struct t {int a; int b;}; struct t y; sizeof(y); })");
 
+  { void *x; }
+
   printf("OK\n");
   return 0;
 }
