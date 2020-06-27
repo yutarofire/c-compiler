@@ -178,8 +178,8 @@ struct Member {
   int offset;
 };
 
-extern Type *type_int;
-extern Type *type_char;
+extern Type *ty_char;
+extern Type *ty_int;
 int align_to(int n, int align);
 Type *pointer_to(Type *base);
 Type *func_type(Type *return_ty);

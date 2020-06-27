@@ -275,10 +275,10 @@ static Type *func_params(Type *ty) {
 // typespec = "int" | "char" | struct_decl
 static Type *typespec() {
   if (consume("char"))
-    return type_char;
+    return ty_char;
 
   if (consume("int"))
-    return type_int;
+    return ty_int;
 
   if (equal(current_token, "struct"))
     return struct_decl();
@@ -778,7 +778,7 @@ static char *new_gvar_name(void) {
 }
 
 static Var *new_string_literal(Token *tok) {
-  Type *ty = array_of(type_char, tok->cont_len);
+  Type *ty = array_of(ty_char, tok->cont_len);
   Var *var = new_gvar(new_gvar_name(), ty);
   var->init_data = tok->contents;
   return var;
