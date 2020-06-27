@@ -37,7 +37,8 @@ Type *array_of(Type *base, int len) {
 }
 
 bool is_integer(Type *type) {
-  return type->kind == TY_INT || type->kind == TY_CHAR;
+  TypeKind k = type->kind;
+  return k == TY_INT || k == TY_CHAR;
 }
 
 void add_type(Node *node) {
