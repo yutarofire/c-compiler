@@ -99,6 +99,7 @@ static VarScope *push_scope(char *name) {
   sc->name = name;
   sc->depth = scope_depth;
   var_scope = sc;
+  return sc;
 }
 
 static Var *new_lvar(Type *ty) {
