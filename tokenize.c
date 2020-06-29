@@ -118,11 +118,10 @@ static Token *read_string_literal(Token *cur, char *start) {
   // terminating '"'
   p++;
 
-  cur = new_token(TK_STR, cur, start, p - start);
-  cur->contents = buf;
-  cur->cont_len = len;
-
-  return cur;
+  Token *tok = new_token(TK_STR, cur, start, p - start);
+  tok->contents = buf;
+  tok->cont_len = len;
+  return tok;
 }
 
 // tokenのlinked listを構築する。
