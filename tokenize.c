@@ -82,6 +82,34 @@ static char read_escaped_char(char *p) {
   }
 }
 
+static Token *read_char_literal(Token *cur, char *start) {
+  if (*start != '\'')
+    error_at(start, "string literal must begin with '\''");
+
+  char *p = start;
+
+  // beggining '\''
+  p++;
+
+  char c;
+  if (*p == '\\') {
+    p++;
+    c = read_escaped_char(p++);
+  } else {
+    c = *p++;
+  }
+
+  if (*p != '\'')
+    error_at(p, "string literal must terminate with '\''");
+
+  // terminating '\''
+  p++;
+
+  Token *tok = new_token(TK_NUM, cur, start, p - start);
+  tok->val = c;
+  return tok;
+}
+
 static Token *read_string_literal(Token *cur, char *start) {
   if (*start != '"')
     error_at(start, "string literal must begin with '\"'");
@@ -188,6 +216,13 @@ Token *tokenize(char *p) {
     }
     if (is_kw_tokenized)
       continue;
+
+    // Char literal
+    if (*p == '\'') {
+      cur = read_char_literal(cur, p);
+      p += cur->len;
+      continue;
+    }
 
     // Identifier
     if (is_alpha(*p)) {

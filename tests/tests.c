@@ -210,6 +210,10 @@ int main() {
   assert(2, ({ typedef struct {int a;} t; { typedef int t; } t x; x.a=2; x.a; }), "({ typedef struct {int a;} t; { typedef int t; } t x; x.a=2; x.a; })");
   assert(3, ({ MyInt x=3; x; }), "({ MyInt x=3; x; })");
 
+  assert(97, 'a', "'a'");
+  assert(10, '\n', "'\\n'");
+  assert(4, sizeof('a'), "sizeof('a')");
+
   printf("OK\n");
   return 0;
 }
