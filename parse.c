@@ -2,7 +2,7 @@
 
 static Token *current_token;
 
-// Scope for local variables.
+// Scope for local or global variables.
 typedef struct VarScope VarScope;
 struct VarScope {
   VarScope *next;
@@ -36,11 +36,6 @@ static Var *find_var(Token *tok) {
     if (strlen(sc->var->name) == tok->len &&
         !strncmp(tok->loc, sc->var->name, tok->len))
       return sc->var;
-
-  for (Var *var = globals; var; var = var->next)
-    if (strlen(var->name) == tok->len &&
-        !strncmp(tok->loc, var->name, tok->len))
-      return var;
 
   return NULL;
 }
@@ -105,6 +100,7 @@ static Var *new_gvar(char *name, Type *ty) {
   var->ty = ty;
   var->is_local = false;
   globals = var;
+  push_scope(var);
   return var;
 }
 
