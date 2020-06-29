@@ -438,7 +438,13 @@ static void leave_scope() {
 }
 
 static bool is_typename(Token *tok) {
-  equal(tok, "void") || equal(tok, "char") || equal(tok, "int") || equal(tok, "struct");
+  static char *kw[] = {"void", "char", "int", "struct"};
+
+  for (int i = 0; i < sizeof(kw) / sizeof(*kw); i++)
+    if (equal(tok, kw[i]))
+        return true;
+
+  return false;
 }
 
 // compound_stmt = (declaration | stmt)*
