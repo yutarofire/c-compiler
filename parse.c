@@ -6,6 +6,7 @@ static Token *current_token;
 typedef struct VarScope VarScope;
 struct VarScope {
   VarScope *next;
+  char *name;
   int depth;
   Var *var;
 };
@@ -33,8 +34,8 @@ static int scope_depth;
 // Find variable by name.
 static Var *find_var(Token *tok) {
   for (VarScope *sc = var_scope; sc; sc = sc->next)
-    if (strlen(sc->var->name) == tok->len &&
-        !strncmp(tok->loc, sc->var->name, tok->len))
+    if (strlen(sc->name) == tok->len &&
+        !strncmp(tok->loc, sc->name, tok->len))
       return sc->var;
 
   return NULL;
@@ -74,9 +75,10 @@ static Node *new_num_node(int val) {
   return node;
 }
 
-static void push_scope(Var *var) {
+static void push_scope(char *name, Var *var) {
   VarScope *sc = calloc(1, sizeof(VarScope));
   sc->next = var_scope;
+  sc->name = name;
   sc->depth = scope_depth;
   sc->var = var;
   var_scope = sc;
@@ -84,12 +86,13 @@ static void push_scope(Var *var) {
 
 static Var *new_lvar(Type *ty) {
   Var *var = calloc(1, sizeof(Var));
-  var->name = strndup(ty->name->loc, ty->name->len);
+  char *name = strndup(ty->name->loc, ty->name->len);
+  var->name = name;
   var->next = locals;
   var->ty = ty;
   var->is_local = true;
   locals = var;
-  push_scope(var);
+  push_scope(name, var);
   return var;
 }
 
@@ -100,7 +103,7 @@ static Var *new_gvar(char *name, Type *ty) {
   var->ty = ty;
   var->is_local = false;
   globals = var;
-  push_scope(var);
+  push_scope(name, var);
   return var;
 }
 
