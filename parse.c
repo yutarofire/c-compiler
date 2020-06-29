@@ -1,5 +1,8 @@
 #include "9cc.h"
 
+static Token *current_token;
+
+// Scope for local variables.
 typedef struct VarScope VarScope;
 struct VarScope {
   VarScope *next;
@@ -7,6 +10,7 @@ struct VarScope {
   Var *var;
 };
 
+// Scopes for struct tags.
 typedef struct TagScope TagScope;
 struct TagScope {
   TagScope *next;
@@ -14,8 +18,6 @@ struct TagScope {
   int depth;
   Type *ty;
 };
-
-static Token *current_token;
 
 static Var *locals;
 static Var *globals;
@@ -28,7 +30,7 @@ static TagScope *tag_scope;
 // scope_depth is incremented at "{" and decremented at "}".
 static int scope_depth;
 
-// Find local variable by name.
+// Find variable by name.
 static Var *find_var(Token *tok) {
   for (VarScope *sc = var_scope; sc; sc = sc->next)
     if (strlen(sc->var->name) == tok->len &&
