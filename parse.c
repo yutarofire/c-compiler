@@ -88,8 +88,8 @@ static Var *new_lvar(Type *ty) {
   var->next = locals;
   var->ty = ty;
   var->is_local = true;
-  push_scope(var);
   locals = var;
+  push_scope(var);
   return var;
 }
 
