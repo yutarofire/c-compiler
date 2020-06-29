@@ -29,6 +29,9 @@ void debug_token(Token *token) {
       case TK_NUM:
         printf("TK_NUM");
         break;
+      case TK_STR:
+        printf("TK_STR");
+        break;
       case TK_EOF:
         printf("TK_EOF");
         break;
