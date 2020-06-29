@@ -82,6 +82,49 @@ static char read_escaped_char(char *p) {
   }
 }
 
+static Token *read_string_literal(Token *cur, char *start) {
+  if (*start != '"')
+    error_at(start, "string literal must begin with '\"'");
+
+  char *p = start;
+
+  // beginning '"'
+  p++;
+
+  // Find the closing double-quote.
+  char *end = p;
+  for (; *end != '"'; end++) {
+    if (*end == '\0')
+      error_at(end, "unclosed string literal");
+    if (*end == '\\')
+      end++;
+  }
+
+  // Including terminating '\0'
+  int buf_size = end - p + 1;
+  char *buf = malloc(buf_size);
+
+  int len = 0;
+  while (*p != '"') {
+    if (*p == '\\') {
+      buf[len++] = read_escaped_char(p + 1);
+      p += 2;
+    } else {
+      buf[len++] = *p++;
+    }
+  }
+  buf[len++] = '\0';
+
+  // terminating '"'
+  p++;
+
+  cur = new_token(TK_STR, cur, start, p - start);
+  cur->contents = buf;
+  cur->cont_len = len;
+
+  return cur;
+}
+
 // tokenのlinked listを構築する。
 Token *tokenize(char *p) {
   user_input = p;
@@ -126,44 +169,14 @@ Token *tokenize(char *p) {
 
     // String literal
     if (*p == '"') {
-      char *start = p;
-
-      p++; // beginning '"'
-
-      // Find the closing double-quote.
-      char *end = p;
-      for (; *end != '"'; end++) {
-        if (*end == '\0')
-          error_at(end, "unclosed string literal");
-        if (*end == '\\')
-          end++;
-      }
-
-      int buf_size = end - p + 1; // Including terminating '\0'
-      char *buf = malloc(buf_size);
-
-      int len = 0;
-      while (*p != '"') {
-        if (*p == '\\') {
-          buf[len++] = read_escaped_char(p + 1);
-          p += 2;
-        } else {
-          buf[len++] = *p++;
-        }
-      }
-      buf[len++] = '\0';
-
-      p++; // terminating '"'
-
-      cur = new_token(TK_STR, cur, start, p - start);
-      cur->contents = buf;
-      cur->cont_len = len;
+      cur = read_string_literal(cur, p);
+      p += cur->len;
       continue;
     }
 
     // Keywords
     bool is_kw_tokenized = false;
-    for (int i=0; i < (sizeof(keywords)/sizeof(keywords[0])); i++) {
+    for (int i=0; i < (sizeof(keywords) / sizeof(keywords[0])); i++) {
       char *kw = keywords[i];
       int len = strlen(kw);
       if (!starts_with(p, kw) || is_alnum(p[len]))
