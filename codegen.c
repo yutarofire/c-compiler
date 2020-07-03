@@ -28,6 +28,13 @@ static void load(Type *ty) {
 }
 
 static void store(Type *ty) {
+  if (ty->kind == TY_BOOL) {
+    // Convert _Bool value to 1 if non-zero value.
+    printf("cmp %s, 0\n", reg(top - 2));
+    printf("setne %sb\n", reg(top - 2));
+    printf("movzx %s, %sb\n", reg(top - 2), reg(top - 2));
+  }
+
   if (ty->size == 1)
     printf("  mov [%s], %sb\n", reg(top - 1), reg(top - 2));
   else if (ty->size == 4)

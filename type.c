@@ -1,6 +1,7 @@
 #include "9cc.h"
 
 Type *ty_void = &(Type){TY_VOID, 1, 1};
+Type *ty_bool = &(Type){TY_BOOL, 1, 1};
 Type *ty_char = &(Type){TY_CHAR, 1, 1};
 Type *ty_int = &(Type){TY_INT, 4, 4};
 
@@ -39,7 +40,7 @@ Type *array_of(Type *base, int len) {
 
 bool is_integer(Type *type) {
   TypeKind k = type->kind;
-  return k == TY_INT || k == TY_CHAR;
+  return k == TY_BOOL || k == TY_CHAR || k == TY_INT;
 }
 
 void add_type(Node *node) {

@@ -141,6 +141,7 @@ Program *parse(Token *tok);
  */
 typedef enum {
   TY_VOID,
+  TY_BOOL,
   TY_CHAR,
   TY_INT,
   TY_PTR,
@@ -180,6 +181,7 @@ struct Member {
 };
 
 extern Type *ty_void;
+extern Type *ty_bool;
 extern Type *ty_char;
 extern Type *ty_int;
 

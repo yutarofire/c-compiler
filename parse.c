@@ -304,11 +304,14 @@ static Type *func_params(Type *ty) {
   return ty;
 }
 
-// typespec = "void" | "char" | "int"
+// typespec = "void" | "_Bool" | "char" | "int"
 //          | struct_decl | ("typedef" typespec) | typedef-name
 static Type *typespec(VarAttr *attr) {
   if (consume("void"))
     return ty_void;
+
+  if (consume("_Bool"))
+    return ty_bool;
 
   if (consume("char"))
     return ty_char;
@@ -493,7 +496,7 @@ static void leave_scope() {
 }
 
 static bool is_typename(Token *tok) {
-  static char *kw[] = {"void", "char", "int", "struct", "typedef"};
+  static char *kw[] = {"void", "_Bool", "char", "int", "struct", "typedef"};
 
   for (int i = 0; i < sizeof(kw) / sizeof(*kw); i++)
     if (equal(tok, kw[i]))
