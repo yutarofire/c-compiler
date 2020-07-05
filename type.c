@@ -44,7 +44,8 @@ Type *enum_type() {
 
 bool is_integer(Type *type) {
   TypeKind k = type->kind;
-  return k == TY_BOOL || k == TY_CHAR || k == TY_INT;
+  return k == TY_BOOL || k == TY_CHAR || k == TY_INT ||
+         k == TY_ENUM;
 }
 
 void add_type(Node *node) {
