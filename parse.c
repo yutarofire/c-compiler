@@ -841,7 +841,7 @@ static Node *func_args() {
   return head.next;
 }
 
-static char *new_gvar_name(void) {
+static char *new_gvar_name() {
   static int cnt = 0;
   char *buf = malloc(20);
   sprintf(buf, ".L.data.%d", cnt++);
