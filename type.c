@@ -38,6 +38,10 @@ Type *array_of(Type *base, int len) {
   return ty;
 }
 
+Type *enum_type() {
+  return new_type(TY_ENUM, 4, 4);
+}
+
 bool is_integer(Type *type) {
   TypeKind k = type->kind;
   return k == TY_BOOL || k == TY_CHAR || k == TY_INT;

@@ -144,6 +144,7 @@ typedef enum {
   TY_BOOL,
   TY_CHAR,
   TY_INT,
+  TY_ENUM,
   TY_PTR,
   TY_FUNC,
   TY_ARRAY,
@@ -189,6 +190,7 @@ int align_to(int n, int align);
 Type *pointer_to(Type *base);
 Type *func_type(Type *return_ty);
 Type *array_of(Type *base, int len);
+Type *enum_type();
 bool is_integer(Type *type);
 void add_type(Node *node);
 

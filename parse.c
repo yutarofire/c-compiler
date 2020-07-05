@@ -2,17 +2,21 @@
 
 static Token *current_token;
 
-// Scope for local, global variables or typedefs.
+// Scope for local, global variables, typedefs
+// or enum constants.
 typedef struct VarScope VarScope;
 struct VarScope {
   VarScope *next;
   char *name;
   int depth;
+
   Var *var;
   Type *type_def;
+  Type *enum_ty;
+  int enum_val;
 };
 
-// Scopes for struct tags.
+// Scopes for struct.
 typedef struct TagScope TagScope;
 struct TagScope {
   TagScope *next;
@@ -168,6 +172,7 @@ static Var *global_var();
 static Function *funcdef();
 static Type *typespec(VarAttr *attr);
 static Type *struct_decl();
+static Type *enum_specifier();
 static Type *func_params(Type *ty);
 static Type *declarator(Type *type);
 static Type *type_suffix(Type *type);
@@ -188,10 +193,12 @@ static Node *primary();
  * Production rules:
  *   program = (funcdef | global_var)*
  *   funcdef = typespec func_name "(" func_params ")" "{" compound_stmt "}"
- *   typespec = "void" | "char" | "int"
- *            | struct_decl | ("typedef" typespec)
- *            | typedef-name
+ *   typespec = "void" | "_Bool" | "char" | "int"
+ *            | struct_decl | enum_specifier
+ *            | ("typedef" typespec) | typedef-name
  *   struct_decl = "struct" ident? ("{" struct_members "}")?
+ *   enum_specifier = "enum" "{" enum_list "}"
+ *   enum_list = ident ("," ident)*
  *   func_params = typespec declarator ("," typespec declarator)*
  *   declarator = "*"* ident type_suffix
  *   type_suffix = "[" num "]"
@@ -305,7 +312,8 @@ static Type *func_params(Type *ty) {
 }
 
 // typespec = "void" | "_Bool" | "char" | "int"
-//          | struct_decl | ("typedef" typespec) | typedef-name
+//          | struct_decl | enum_specifier
+//          | ("typedef" typespec) | typedef-name
 static Type *typespec(VarAttr *attr) {
   if (consume("void"))
     return ty_void;
@@ -321,6 +329,9 @@ static Type *typespec(VarAttr *attr) {
 
   if (equal(current_token, "struct"))
     return struct_decl();
+
+  if (equal(current_token, "enum"))
+    return enum_specifier();
 
   if (consume("typedef")) {
     if (!attr)
@@ -400,6 +411,38 @@ static Type *struct_decl() {
   // Register the struct type if a name was given.
   if (tag)
     push_tag_scope(tag, ty);
+
+  return ty;
+}
+
+// enum_specifier = "enum" "{" enum_list "}"
+// enum_list = ident ("," ident)*
+static Type *enum_specifier() {
+  Type *ty = enum_type();
+
+  skip("enum");
+  skip("{");
+
+  // Read an enum-list.
+  int i = 0;
+  while (!equal(current_token, "}")) {
+    if (i != 0)
+      skip(",");
+
+    if (current_token->kind != TK_IDENT)
+      error_at(current_token->loc, "expected ident for enum list");
+
+    char *name = strndup(current_token->loc, current_token->len);
+    current_token = current_token->next;
+
+    VarScope *sc = push_scope(name);
+    sc->enum_ty = ty;
+    sc->enum_val = i;
+
+    i++;
+  }
+
+  skip("}");
 
   return ty;
 }
@@ -496,7 +539,7 @@ static void leave_scope() {
 }
 
 static bool is_typename(Token *tok) {
-  static char *kw[] = {"void", "_Bool", "char", "int", "struct", "typedef"};
+  static char *kw[] = {"void", "_Bool", "char", "int", "struct", "typedef", "enum"};
 
   for (int i = 0; i < sizeof(kw) / sizeof(*kw); i++)
     if (equal(tok, kw[i]))
@@ -892,11 +935,17 @@ static Node *primary() {
       return funcall_node;
     }
 
-    // Variable
+    // Variable or enum constant
     VarScope *sc = find_var(current_token);
-    if (!sc || !sc->var)
+    if (!sc || (!sc->var && !sc->enum_ty))
       error_at(current_token->loc, "undefined variable");
-    Node *node = new_node(ND_VAR);
+
+    Node *node;
+    if (sc->var)
+      node = new_node(ND_VAR);
+    else
+      node = new_num_node(sc->enum_val);
+
     node->var = sc->var;
     current_token = current_token->next;
     return node;

@@ -218,6 +218,16 @@ int main() {
   assert(1, ({ _Bool x = 1; x; }), "({ _Bool x = 1; x; })");
   assert(1, ({ _Bool x = 2; x; }), "({ _Bool x = 2; x; })");
 
+  assert(0, ({ enum { zero, one, two }; zero; }), "({ enum { zero, one, two }; zero; })");
+  assert(1, ({ enum { zero, one, two }; one; }), "({ enum { zero, one, two }; one; })");
+  assert(2, ({ enum { zero, one, two }; two; }), "({ enum { zero, one, two }; two; })");
+  assert(4, ({ enum { zero, one, two } x; sizeof(x); }), "({ enum { zero, one, two } x; sizeof(x); })");
+  assert(2, ({ enum { zero, one, two }; one + 1; }), "({ enum { zero, one, two }; one + 1; })");
+
+  assert(10, ({ int one = 10; { enum { zero, one, two } x; } one; }), "({ int one = 10; { enum { zero, one, two } x; } one; })");
+  assert(1, ({ char x = 'a'; { enum { zero, one, two } x; } sizeof(x); }), "({ char x = 'a'; { enum { zero, one, two } x; } sizeof(x); })");
+  assert(4, ({ enum { zero, one, two } x; { char x = 'a'; } sizeof(x); }), "({ enum { zero, one, two } x; { char x = 'a'; } sizeof(x); })");
+
   printf("OK\n");
   return 0;
 }
