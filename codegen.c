@@ -250,7 +250,8 @@ static void emit_text(Function *funcs) {
   printf(".text\n");
 
   for (Function *fn = funcs; fn; fn = fn->next) {
-    printf(".globl %s\n", fn->name);
+    if (!fn->is_static)
+      printf(".globl %s\n", fn->name);
     printf("%s:\n", fn->name);
 
     current_func = fn;

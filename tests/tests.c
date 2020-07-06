@@ -51,6 +51,10 @@ int fib(int x) {
   return fib(x-1) + fib(x-2);
 }
 
+static int static_fn() {
+  return 3;
+}
+
 int main() {
   assert(0, 0, "0");
   assert(42, 42, "42");
@@ -227,6 +231,8 @@ int main() {
   assert(10, ({ int one = 10; { enum { zero, one, two } x; } one; }), "({ int one = 10; { enum { zero, one, two } x; } one; })");
   assert(1, ({ char x = 'a'; { enum { zero, one, two } x; } sizeof(x); }), "({ char x = 'a'; { enum { zero, one, two } x; } sizeof(x); })");
   assert(4, ({ enum { zero, one, two } x; { char x = 'a'; } sizeof(x); }), "({ enum { zero, one, two } x; { char x = 'a'; } sizeof(x); })");
+
+  assert(3, static_fn(), "static_fn()");
 
   printf("OK\n");
   return 0;

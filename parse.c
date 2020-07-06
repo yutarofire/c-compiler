@@ -28,6 +28,7 @@ struct TagScope {
 // Variable attributes such as typedef or extern.
 typedef struct {
   bool is_typedef;
+  bool is_static;
 } VarAttr;
 
 static Var *locals;
@@ -313,7 +314,8 @@ static Type *func_params(Type *ty) {
 
 // typespec = "void" | "_Bool" | "char" | "int"
 //          | struct_decl | enum_specifier
-//          | ("typedef" typespec) | typedef-name
+//          | ("typedef" typespec) | ("static" typespec)
+//          | typedef-name
 static Type *typespec(VarAttr *attr) {
   if (consume("void"))
     return ty_void;
@@ -333,11 +335,19 @@ static Type *typespec(VarAttr *attr) {
   if (equal(current_token, "enum"))
     return enum_specifier();
 
-  if (consume("typedef")) {
+  if (equal(current_token, "typedef") || equal(current_token, "static")) {
     if (!attr)
       error_at(current_token->loc, "storage class specifier is not allowed in this context");
 
-    attr->is_typedef = true;
+    if (equal(current_token, "typedef"))
+      attr->is_typedef = true;
+    else
+      attr->is_static = true;
+
+    if (attr->is_typedef + attr->is_static > 1)
+      error_at(current_token->loc, "typedef and static may not be used together");
+
+    current_token = current_token->next;
     return typespec(attr);
   }
 
@@ -539,7 +549,7 @@ static void leave_scope() {
 }
 
 static bool is_typename(Token *tok) {
-  static char *kw[] = {"void", "_Bool", "char", "int", "struct", "typedef", "enum"};
+  static char *kw[] = {"void", "_Bool", "char", "int", "struct", "typedef", "enum", "static"};
 
   for (int i = 0; i < sizeof(kw) / sizeof(*kw); i++)
     if (equal(tok, kw[i]))
@@ -573,9 +583,11 @@ static Function *funcdef() {
   locals = NULL;
   Function *fn = calloc(1, sizeof(Function));
 
-  Type *base_ty = typespec(NULL);
+  VarAttr attr = {};
+  Type *base_ty = typespec(&attr);
 
   fn->name = strndup(current_token->loc, current_token->len);
+  fn->is_static = attr.is_static;
   current_token = current_token->next;
 
   enter_scope();
