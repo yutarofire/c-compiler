@@ -209,7 +209,7 @@ static Node *primary();
  *   declaration = typespec declarator ("=" expr)? ";"
  *   stmt = "return" expr ";"
  *        | "if" "(" expr ")" stmt ("else" stmt)?
- *        | "for" "(" expr_stmt? ";" expr? ";" expr_stmt? ")" stmt
+ *        | "for" "(" (expr_stmt? ";" | declaration) expr? ";" expr_stmt? ")" stmt
  *        | "while" "(" expr ")" stmt
  *        | "{" stmt* "}"
  *        | expr_stmt ";"
@@ -618,7 +618,7 @@ static Node *expr_stmt() {
 
 // stmt = "return" expr ";"
 //      | "if" "(" expr ")" stmt ("else" stmt)?
-//      | "for" "(" expr_stmt? ";" expr? ";" expr_stmt? ")" stmt
+//      | "for" "(" (expr_stmt? ";" | declaration) expr? ";" expr_stmt? ")" stmt
 //      | "while" "(" expr ")" stmt
 //      | "{" stmt* "}"
 //      | expr_stmt ";"
@@ -644,9 +644,15 @@ static Node *stmt() {
     Node *node = new_node(ND_FOR);
     skip("(");
 
-    if (!equal(current_token, ";"))
-      node->init = expr_stmt();
-    skip(";");
+    enter_scope();
+
+    if (is_typename(current_token)) {
+      node->init = declaration();
+    } else {
+      if (!equal(current_token, ";"))
+        node->init = expr_stmt();
+      skip(";");
+    }
 
     if (!equal(current_token, ";"))
       node->cond = expr();
@@ -657,6 +663,8 @@ static Node *stmt() {
     skip(")");
 
     node->then = stmt();
+
+    leave_scope();
     return node;
   }
 
