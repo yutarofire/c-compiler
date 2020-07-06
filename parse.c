@@ -168,6 +168,9 @@ static void skip(char *op) {
     error_at(current_token->loc, "Not '%s'", op);
 }
 
+static Node *new_add_node(Node *lhs, Node *rhs);
+static Node *new_sub_node(Node *lhs, Node *rhs);
+
 static Program *program();
 static Var *global_var();
 static Function *funcdef();
@@ -215,7 +218,8 @@ static Node *primary();
  *        | expr_stmt ";"
  *   expr_stmt = expr
  *   expr = assign
- *   assign = equality ("=" assign)?
+ *   assign = equality (assign_op assign)?
+ *   assign_op = "=" | "+=" | "-=" | "*=" | "/="
  *   equality = relational ("==" relational | "!=" relational)*
  *   relational = add ("<" add | "<=" add | ">=" add | ">" add)*
  *   add = mul ("+" mul | "-" mul)*
@@ -694,11 +698,38 @@ static Node *expr() {
   return assign();
 }
 
-// assign = equality ("=" assign)?
+// assign = equality (assign_op assign)?
+// assign_op = "=" | "+=" | "-=" | "*=" | "/="
 static Node *assign() {
   Node *node = equality();
+
   if (consume("="))
     node = new_binary_node(ND_ASSIGN, node, assign());
+  else if (consume("+="))
+    node = new_binary_node(
+      ND_ASSIGN,
+      node,
+      new_add_node(node, assign())
+    );
+  else if (consume("-="))
+    node = new_binary_node(
+      ND_ASSIGN,
+      node,
+      new_sub_node(node, assign())
+    );
+  else if (consume("*="))
+    node = new_binary_node(
+      ND_ASSIGN,
+      node,
+      new_binary_node(ND_MUL, node, assign())
+    );
+  else if (consume("/="))
+    node = new_binary_node(
+      ND_ASSIGN,
+      node,
+      new_binary_node(ND_DIV, node, assign())
+    );
+
   return node;
 }
 
