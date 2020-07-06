@@ -225,6 +225,7 @@ static Node *primary();
  *   add = mul ("+" mul | "-" mul)*
  *   mul = unary ("*" unary | "/" unary)*
  *   unary = ("+" | "-" | "*" | "&") unary
+ *         | ("++" | "--") unary
  *         | "sizeof" unary
  *         | postfix
  *   postfix = primary ("[" expr "]" | "." ident | "->" indent)?
@@ -850,6 +851,7 @@ static Node *mul() {
 }
 
 // unary = ("+" | "-" | "*" | "&") unary
+//       | ("++" | "--") unary
 //       | "sizeof" unary
 //       | postfix
 static Node *unary() {
@@ -864,6 +866,24 @@ static Node *unary() {
 
   if (consume("&"))
     return new_unary_node(ND_ADDR, unary());
+
+  if (consume("++")) {
+    Node *node = unary();
+    return new_binary_node(
+      ND_ASSIGN,
+      node,
+      new_add_node(node, new_num_node(1))
+    );
+  }
+
+  if (consume("--")) {
+    Node *node = unary();
+    return new_binary_node(
+      ND_ASSIGN,
+      node,
+      new_sub_node(node, new_num_node(1))
+    );
+  }
 
   if (consume("sizeof")) {
     Node *node = unary();
