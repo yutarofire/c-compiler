@@ -175,6 +175,9 @@ static void gen_expr(Node *node) {
       printf("  setle al\n");
       printf("  movzx %s, al\n", rd);
       return;
+    case ND_BITAND:
+      printf("  and %s, %s\n", rd, rs);
+      return;
     default:
       error("invalid expression");
   }

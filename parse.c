@@ -189,6 +189,7 @@ static Node *equality();
 static Node *relational();
 static Node *add();
 static Node *mul();
+static Node *bitand();
 static Node *unary();
 static Node *postfix();
 static Node *primary();
@@ -223,7 +224,8 @@ static Node *primary();
  *   equality = relational ("==" relational | "!=" relational)*
  *   relational = add ("<" add | "<=" add | ">=" add | ">" add)*
  *   add = mul ("+" mul | "-" mul)*
- *   mul = unary ("*" unary | "/" unary)*
+ *   mul = bitand ("*" bitand | "/" bitand)*
+ *   bitand = unary ("&" unary)*
  *   unary = ("+" | "-" | "*" | "&" | "~") unary
  *         | ("++" | "--") unary
  *         | "sizeof" unary
@@ -836,18 +838,30 @@ static Node *add(){
   }
 }
 
-// mul = unary ("*" unary | "/" unary)*
+// mul = bitand ("*" bitand | "/" bitand)*
 static Node *mul() {
-  Node *node = unary();
+  Node *node = bitand();
 
   for (;;) {
     if (consume("*"))
-      node = new_binary_node(ND_MUL, node, unary());
+      node = new_binary_node(ND_MUL, node, bitand());
     else if (consume("/"))
-      node = new_binary_node(ND_DIV, node, unary());
+      node = new_binary_node(ND_DIV, node, bitand());
     else
       return node;
   }
+}
+
+// bitand = unary ("&" unary)*
+static Node *bitand() {
+  Node *node = unary();
+
+  while (equal(current_token, "&")) {
+    skip("&");
+    node = new_binary_node(ND_BITAND, node, unary());
+  }
+
+  return node;
 }
 
 // unary = ("+" | "-" | "*" | "&" | "~") unary

@@ -266,6 +266,11 @@ int main() {
   assert(-1, ~0, "~0");
   assert(0, ~-1, "~-1");
 
+  assert(0, 0&1, "0&1");
+  assert(1, 3&1, "3&1");
+  assert(3, 7&3, "7&3");
+  assert(10, -1&10, "-1&10");
+
   printf("OK\n");
   return 0;
 }
