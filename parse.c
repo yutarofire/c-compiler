@@ -224,7 +224,7 @@ static Node *primary();
  *   relational = add ("<" add | "<=" add | ">=" add | ">" add)*
  *   add = mul ("+" mul | "-" mul)*
  *   mul = unary ("*" unary | "/" unary)*
- *   unary = ("+" | "-" | "*" | "&") unary
+ *   unary = ("+" | "-" | "*" | "&" | "~") unary
  *         | ("++" | "--") unary
  *         | "sizeof" unary
  *         | postfix
@@ -850,7 +850,7 @@ static Node *mul() {
   }
 }
 
-// unary = ("+" | "-" | "*" | "&") unary
+// unary = ("+" | "-" | "*" | "&" | "~") unary
 //       | ("++" | "--") unary
 //       | "sizeof" unary
 //       | postfix
@@ -866,6 +866,9 @@ static Node *unary() {
 
   if (consume("&"))
     return new_unary_node(ND_ADDR, unary());
+
+  if (consume("~"))
+    return new_unary_node(ND_BITNOT, unary());
 
   if (consume("++")) {
     Node *node = unary();

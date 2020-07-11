@@ -91,6 +91,10 @@ static void gen_expr(Node *node) {
       gen_addr(node->lhs);
       store(node->ty);
       return;
+    case ND_BITNOT:
+      gen_expr(node->lhs);
+      printf("  not %s\n", reg(top - 1));
+      return;
     case ND_FUNCALL: {
       int nargs = 0;
       // First, evaluate args and put them to the stack.

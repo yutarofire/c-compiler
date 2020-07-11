@@ -75,6 +75,7 @@ typedef enum {
   ND_MEMBER,    // . (struct member access)
   ND_DEREF,     // unary *
   ND_ADDR,      // unary &
+  ND_BITNOT,    // ~
   ND_RETURN,    // "return"
   ND_IF,        // "if"
   ND_FOR,       // "for"

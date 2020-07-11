@@ -263,6 +263,9 @@ int main() {
   assert(1, ({ int a[3]; a[0]=0; a[1]=1; a[2]=2; int *p=a+1; *p++; }), "({ int a[3]; a[0]=0; a[1]=1; a[2]=2; int *p=a+1; *p++; })");
   assert(1, ({ int a[3]; a[0]=0; a[1]=1; a[2]=2; int *p=a+1; *p--; }), "({ int a[3]; a[0]=0; a[1]=1; a[2]=2; int *p=a+1; *p--; })");
 
+  assert(-1, ~0, "~0");
+  assert(0, ~-1, "~-1");
+
   printf("OK\n");
   return 0;
 }
