@@ -228,7 +228,7 @@ static Node *primary();
  *         | ("++" | "--") unary
  *         | "sizeof" unary
  *         | postfix
- *   postfix = primary ("[" expr "]" | "." ident | "->" indent)?
+ *   postfix = primary ("[" expr "]" | "." ident | "->" indent | "++" | "--")?
  *   primary = "(" "{" compound_stmt "}" ")"
  *           | "(" expr ")"
  *           | ident ("(" func_args? ")")?
@@ -914,7 +914,49 @@ static Node *struct_ref(Node *lhs) {
   return node;
 }
 
-// postfix = primary ("[" expr "]" | "." ident | "->" indent)?
+// Convert A++ to `({ A = A + 1; A - 1; })`
+static Node *new_inc(Node *node) {
+  Node *stmt_expr = new_node(ND_STMT_EXPR);
+
+  Node *body = new_unary_node(
+    ND_EXPR_STMT,
+    new_binary_node(
+      ND_ASSIGN,
+      node,
+      new_add_node(node, new_num_node(1))
+    )
+  );
+  body->next = new_unary_node(
+    ND_EXPR_STMT,
+    new_sub_node(node, new_num_node(1))
+  );
+
+  stmt_expr->body = body;
+  return stmt_expr;
+}
+
+// Convert A-- to `({ A = A - 1; A + 1; })`
+static Node *new_dec(Node *node) {
+  Node *stmt_expr = new_node(ND_STMT_EXPR);
+
+  Node *body = new_unary_node(
+    ND_EXPR_STMT,
+    new_binary_node(
+      ND_ASSIGN,
+      node,
+      new_sub_node(node, new_num_node(1))
+    )
+  );
+  body->next = new_unary_node(
+    ND_EXPR_STMT,
+    new_add_node(node, new_num_node(1))
+  );
+
+  stmt_expr->body = body;
+  return stmt_expr;
+}
+
+// postfix = primary ("[" expr "]" | "." ident | "->" indent | "++" | "--")?
 static Node *postfix() {
   Node *node = primary();
 
@@ -938,6 +980,12 @@ static Node *postfix() {
     node = struct_ref(node);
     current_token = current_token->next;
   }
+
+  if (consume("++"))
+    node = new_inc(node);
+
+  if (consume("--"))
+    node = new_dec(node);
 
   return node;
 }

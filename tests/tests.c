@@ -247,9 +247,21 @@ int main() {
   assert(3, ({ int i=6; i/=2; }), "({ int i=6; i/=2; })");
 
   assert(3, ({ int i=2; ++i; }), "({ int i=2; ++i; })");
+  assert(3, ({ int i=2; ++i; i; }), "({ int i=2; ++i; i; })");
   assert(1, ({ int i=2; --i; }), "({ int i=2; --i; })");
+  assert(1, ({ int i=2; --i; i; }), "({ int i=2; --i; i; })");
   assert(2, ({ int a[3]; a[0]=0; a[1]=1; a[2]=2; int *p=a+1; ++*p; }), "({ int a[3]; a[0]=0; a[1]=1; a[2]=2; int *p=a+1; ++*p; })");
   assert(0, ({ int a[3]; a[0]=0; a[1]=1; a[2]=2; int *p=a+1; --*p; }), "({ int a[3]; a[0]=0; a[1]=1; a[2]=2; int *p=a+1; --*p; })");
+
+  assert(2, ({ int i=2; i++; }), "({ int i=2; i++; })");
+  assert(3, ({ int i=2; i++; i; }), "({ int i=2; i++; i; })");
+  assert(2, ({ int i=2; i--; }), "({ int i=2; i--; })");
+  assert(1, ({ int i=2; i--; i; }), "({ int i=2; i--; i; })");
+
+  assert(11, ({ int a[3]; a[0]=0; a[1]=11; a[2]=22; int *p=a; p++; *p; }), "({ int a[3]; a[0]=0; a[1]=1; a[2]=2; int *p=a+1; *p++; })");
+  assert(11, ({ int a[3]; a[0]=0; a[1]=11; a[2]=22; int *p=a; p++; p++; p--; *p; }), "({ int a[3]; a[0]=0; a[1]=1; a[2]=2; int *p=a+1; *p++; })");
+  assert(1, ({ int a[3]; a[0]=0; a[1]=1; a[2]=2; int *p=a+1; *p++; }), "({ int a[3]; a[0]=0; a[1]=1; a[2]=2; int *p=a+1; *p++; })");
+  assert(1, ({ int a[3]; a[0]=0; a[1]=1; a[2]=2; int *p=a+1; *p--; }), "({ int a[3]; a[0]=0; a[1]=1; a[2]=2; int *p=a+1; *p--; })");
 
   printf("OK\n");
   return 0;
