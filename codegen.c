@@ -2,6 +2,7 @@
 
 static int top;
 static int labelseq = 1;
+static int brkseq; // For "break"
 static char *argreg8[] = {"dil", "sil", "dl", "cl", "r8b", "r9b"};
 static char *argreg32[] = {"edi", "esi", "edx", "ecx", "r8d", "r9d"};
 static char *argreg64[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
@@ -237,34 +238,49 @@ static void gen_stmt(Node *node) {
     }
     case ND_FOR: {
       int seq = labelseq++;
+      int brk = brkseq;
+      brkseq = seq;
+
       if (node->init)
         gen_stmt(node->init);
       printf(".L.begin.%d:\n", seq);
       if (node->cond) {
         gen_expr(node->cond);
         printf("  cmp %s, 0\n", reg(--top));
-        printf("  je  .L.end.%d\n", seq);
+        printf("  je  .L.break.%d\n", seq);
       }
       gen_stmt(node->then);
       if (node->inc)
         gen_stmt(node->inc);
       printf("  jmp .L.begin.%d\n", seq);
-      printf(".L.end.%d:\n", seq);
+      printf(".L.break.%d:\n", seq);
+
+      brkseq = brk;
       return;
     }
     case ND_WHILE: {
       int seq = labelseq++;
+      int brk = brkseq;
+      brkseq = seq;
+
       printf(".L.begin.%d:\n", seq);
       if (node->cond) {
         gen_expr(node->cond);
         printf("  cmp %s, 0\n", reg(--top));
-        printf("  je  .L.end.%d\n", seq);
+        printf("  je  .L.break.%d\n", seq);
       }
       gen_stmt(node->then);
       printf("  jmp .L.begin.%d\n", seq);
-      printf(".L.end.%d:\n", seq);
+      printf(".L.break.%d:\n", seq);
+
+      brkseq = brk;
       return;
     }
+    case ND_BREAK:
+      if (brkseq == 0)
+        error("stray break");
+      printf("  jmp .L.break.%d\n", brkseq);
+      return;
     case ND_BLOCK:
       for (Node *n = node->body; n; n = n->next)
         gen_stmt(n);

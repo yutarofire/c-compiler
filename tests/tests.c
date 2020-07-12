@@ -280,6 +280,9 @@ int main() {
   assert(0, (2-2)&&5, "(2-2)&&5");
   assert(1, 1&&5, "1&&5");
 
+  assert(3, ({ int i; for (i=0; i<10; i++) { if (i==3) break; } i; }), "({ int i; for (i=0; i<10; i++) { if (i==3) break; } i; })");
+  assert(3, ({ int i; while (i<10) { if (i==3) break; i++; } i; }), "({ int i; while (i<10) { if (i==3) break; i++; } i; })");
+
   printf("OK\n");
   return 0;
 }
