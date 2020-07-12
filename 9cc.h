@@ -77,6 +77,8 @@ typedef enum {
   ND_ADDR,      // unary &
   ND_BITAND,    // +
   ND_BITNOT,    // ~
+  ND_LOGOR,     // ||
+  ND_LOGAND,    // &&
   ND_RETURN,    // "return"
   ND_IF,        // "if"
   ND_FOR,       // "for"

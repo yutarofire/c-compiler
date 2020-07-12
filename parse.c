@@ -185,6 +185,8 @@ static Node *declaration();
 static Node *stmt();
 static Node *expr();
 static Node *assign();
+static Node *logor();
+static Node *logand();
 static Node *equality();
 static Node *relational();
 static Node *add();
@@ -219,8 +221,10 @@ static Node *primary();
  *        | expr_stmt ";"
  *   expr_stmt = expr
  *   expr = assign
- *   assign = equality (assign_op assign)?
+ *   assign = logor (assign_op assign)?
  *   assign_op = "=" | "+=" | "-=" | "*=" | "/="
+ *   logor = logand ("||" logand)*
+ *   logand = equality ("&&" equality)*
  *   equality = relational ("==" relational | "!=" relational)*
  *   relational = add ("<" add | "<=" add | ">=" add | ">" add)*
  *   add = mul ("+" mul | "-" mul)*
@@ -701,10 +705,10 @@ static Node *expr() {
   return assign();
 }
 
-// assign = equality (assign_op assign)?
+// assign = logor (assign_op assign)?
 // assign_op = "=" | "+=" | "-=" | "*=" | "/="
 static Node *assign() {
-  Node *node = equality();
+  Node *node = logor();
 
   if (consume("="))
     node = new_binary_node(ND_ASSIGN, node, assign());
@@ -732,6 +736,30 @@ static Node *assign() {
       node,
       new_binary_node(ND_DIV, node, assign())
     );
+
+  return node;
+}
+
+// logor = logand ("||" logand)*
+static Node *logor() {
+  Node *node = logand();
+
+  while (equal(current_token, "||")) {
+    skip("||");
+    node = new_binary_node(ND_LOGOR, node, logand());
+  }
+
+  return node;
+}
+
+// logand = equality ("&&" equality)*
+static Node *logand() {
+  Node *node = equality();
+
+  while (equal(current_token, "&&")) {
+    skip("&&");
+    node = new_binary_node(ND_LOGAND, node, equality());
+  }
 
   return node;
 }
