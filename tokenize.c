@@ -70,7 +70,8 @@ static bool is_alnum(char c) {
 
 static char *keywords[] = {
   "return", "if", "else", "for", "while", "sizeof", "int", "char",
-  "struct", "void", "typedef", "_Bool", "enum", "static", "break"
+  "struct", "void", "typedef", "_Bool", "enum", "static", "break",
+  "continue"
 };
 
 static char read_escaped_char(char *p) {

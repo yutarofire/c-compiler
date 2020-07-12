@@ -218,6 +218,7 @@ static Node *primary();
  *        | "for" "(" (expr_stmt? ";" | declaration) expr? ";" expr_stmt? ")" stmt
  *        | "while" "(" expr ")" stmt
  *        | "break" ";"
+ *        | "continue" ";"
  *        | "{" stmt* "}"
  *        | expr_stmt ";"
  *   expr_stmt = expr
@@ -632,7 +633,8 @@ static Node *expr_stmt() {
 //      | "if" "(" expr ")" stmt ("else" stmt)?
 //      | "for" "(" (expr_stmt? ";" | declaration) expr? ";" expr_stmt? ")" stmt
 //      | "while" "(" expr ")" stmt
-//      | "break"
+//      | "break" ";"
+//      | "continue" ";"
 //      | "{" stmt* "}"
 //      | expr_stmt ";"
 static Node *stmt() {
@@ -693,6 +695,11 @@ static Node *stmt() {
   if (consume("break")) {
     skip(";");
     return new_node(ND_BREAK);
+  }
+
+  if (consume("continue")) {
+    skip(";");
+    return new_node(ND_CONTINUE);
   }
 
   if (consume("{")) {
