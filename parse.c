@@ -168,6 +168,10 @@ static void skip(char *op) {
     error_at(current_token->loc, "Not '%s'", op);
 }
 
+// Points to node representing a switch if we are parsing
+// a switch statement. Otherwise, NULL.
+static Node *current_switch;
+
 static Node *new_add_node(Node *lhs, Node *rhs);
 static Node *new_sub_node(Node *lhs, Node *rhs);
 
@@ -215,11 +219,13 @@ static Node *primary();
  *   declaration = typespec declarator ("=" expr)? ";"
  *   stmt = "return" expr ";"
  *        | "if" "(" expr ")" stmt ("else" stmt)?
+ *        | "switch" "(" expr ")" stmt
+ *        | "case" num ":" stmt
  *        | "for" "(" (expr_stmt? ";" | declaration) expr? ";" expr_stmt? ")" stmt
  *        | "while" "(" expr ")" stmt
  *        | "break" ";"
  *        | "continue" ";"
- *        | "{" stmt* "}"
+ *        | "{" compound_stmt "}"
  *        | expr_stmt ";"
  *   expr_stmt = expr
  *   expr = assign
@@ -631,11 +637,13 @@ static Node *expr_stmt() {
 
 // stmt = "return" expr ";"
 //      | "if" "(" expr ")" stmt ("else" stmt)?
+//      | "switch" "(" expr ")" stmt
+//      | "case" num ":" stmt
 //      | "for" "(" (expr_stmt? ";" | declaration) expr? ";" expr_stmt? ")" stmt
 //      | "while" "(" expr ")" stmt
 //      | "break" ";"
 //      | "continue" ";"
-//      | "{" stmt* "}"
+//      | "{" compound_stmt "}"
 //      | expr_stmt ";"
 static Node *stmt() {
   if (consume("return")) {
@@ -652,6 +660,36 @@ static Node *stmt() {
     node->then = stmt();
     if (consume("else"))
       node->els = stmt();
+    return node;
+  }
+
+  if (consume("switch")) {
+    Node *node = new_node(ND_SWITCH);
+    skip("(");
+    node->cond = expr();
+    skip(")");
+
+    Node *outside_sw = current_switch;
+    current_switch = node;
+    node->then = stmt();
+    current_switch = outside_sw;
+    return node;
+  }
+
+  if (consume("case")) {
+    if (!current_switch)
+      error_at(current_token->loc, "stray case");
+    if (current_token->kind != TK_NUM)
+      error_at(current_token->loc, "expected number");
+    int val = current_token->val;
+    current_token = current_token->next;
+
+    Node *node = new_node(ND_CASE);
+    node->val = val;
+    skip(":");
+    node->lhs = stmt();
+    node->case_next = current_switch->case_next;
+    current_switch->case_next = node;
     return node;
   }
 

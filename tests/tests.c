@@ -296,6 +296,9 @@ int main() {
   assert(11, ({ int i=0; int j=0; while (i++<10) { if (i>5) continue; j++; } i; }), "({ int i=0; int j=0; while (i++<10) { if (i>5) continue; j++; } i; })");
   assert(5, ({ int i=0; int j=0; while (i++<10) { if (i>5) continue; j++; } j; }), "({ int i=0; int j=0; while (i++<10) { if (i>5) continue; j++; } j; })");
 
+  assert(22 ,({ int i=2; switch (i) { case 1: i=11; break; case 2: i=22; break; case 3: i=33; break; } i; }), "({ int i=2; switch (i) { case 1: i=11; break; case 2: i=22; break; case 3: i=33; break; } i; })");
+  // assert(44 ,({ int i=4; switch (i) { case 1: i=11; break; case 2: i=22; break; case 3: i=33; break; default: i=44 } i; }), "({ int i=4; switch (i) { case 1: i=11; break; case 2: i=22; break; case 3: i=33; break; default: i=44 } i; })");
+
   printf("OK\n");
   return 0;
 }

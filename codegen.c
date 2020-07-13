@@ -285,6 +285,31 @@ static void gen_stmt(Node *node) {
       contseq = cont;
       return;
     }
+    case ND_SWITCH: {
+      int seq = labelseq++;
+      int brk = brkseq;
+      brkseq = seq;
+
+      gen_expr(node->cond);
+
+      for (Node *n = node->case_next; n; n = n->case_next) {
+        n->case_label = labelseq++;
+        printf("  cmp %s, %d\n", reg(top - 1), n->val);
+        printf("  je .L.case.%d\n", n->case_label);
+      }
+      top--;
+
+      printf("  jmp .L.break.%d\n", seq);
+      gen_stmt(node->then);
+      printf(".L.break.%d:\n", seq);
+
+      brkseq = brk;
+      return;
+    }
+    case ND_CASE:
+      printf(".L.case.%d:\n", node->case_label);
+      gen_stmt(node->lhs);
+      return;
     case ND_BREAK:
       if (brkseq == 0)
         error("stray break");

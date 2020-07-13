@@ -83,6 +83,8 @@ typedef enum {
   ND_IF,        // "if"
   ND_FOR,       // "for"
   ND_WHILE,     // "while"
+  ND_SWITCH,    // "switch"
+  ND_CASE,      // "case"
   ND_BLOCK,     // Block "{...}"
   ND_BREAK,     // "break"
   ND_CONTINUE,  // "continue"
@@ -103,8 +105,11 @@ struct Node {
   Node *lhs; // Left-hand side
   Node *rhs; // Right-hand side
 
-  Var *var;  // For ND_VAR
-  int val;   // For ND_NUM
+  // Variable
+  Var *var;
+
+  // Numeric literal
+  int val;
 
   // Block or statement-expression
   Node *body;
@@ -122,6 +127,10 @@ struct Node {
   Node *inc;
   Node *then;
   Node *els;
+
+  // Switch statement
+  Node *case_next;
+  int case_label;
 };
 
 typedef struct Function Function;
