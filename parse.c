@@ -639,6 +639,7 @@ static Node *expr_stmt() {
 //      | "if" "(" expr ")" stmt ("else" stmt)?
 //      | "switch" "(" expr ")" stmt
 //      | "case" num ":" stmt
+//      | "default" ":" stmt
 //      | "for" "(" (expr_stmt? ";" | declaration) expr? ";" expr_stmt? ")" stmt
 //      | "while" "(" expr ")" stmt
 //      | "break" ";"
@@ -679,6 +680,7 @@ static Node *stmt() {
   if (consume("case")) {
     if (!current_switch)
       error_at(current_token->loc, "stray case");
+
     if (current_token->kind != TK_NUM)
       error_at(current_token->loc, "expected number");
     int val = current_token->val;
@@ -690,6 +692,20 @@ static Node *stmt() {
     node->lhs = stmt();
     node->case_next = current_switch->case_next;
     current_switch->case_next = node;
+    return node;
+  }
+
+  if (consume("default")) {
+    if (!current_switch)
+      error_at(current_token->loc, "stray default");
+
+    if (current_switch->default_case)
+      error_at(current_token->loc, "duplicated default");
+
+    Node *node = new_node(ND_CASE);
+    skip(":");
+    node->lhs = stmt();
+    current_switch->default_case = node;
     return node;
   }
 

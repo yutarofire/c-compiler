@@ -130,6 +130,7 @@ struct Node {
 
   // Switch statement
   Node *case_next;
+  Node *default_case;
   int case_label;
 };
 

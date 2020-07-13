@@ -299,6 +299,12 @@ static void gen_stmt(Node *node) {
       }
       top--;
 
+      if (node->default_case) {
+        int label_num = labelseq++;
+        node->default_case->case_label = label_num;
+        printf("  jmp .L.case.%d\n", label_num);
+      }
+
       printf("  jmp .L.break.%d\n", seq);
       gen_stmt(node->then);
       printf(".L.break.%d:\n", seq);
