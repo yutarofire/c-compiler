@@ -216,7 +216,7 @@ static Node *primary();
  *               | "(" func_params ")"
  *               | ε
  *   compound_stmt = (declaration | stmt)*
- *   declaration = typespec declarator ("=" expr)? ";"
+ *   declaration = typespec (declarator ("=" expr)?)? ";"
  *   stmt = "return" expr ";"
  *        | "if" "(" expr ")" stmt ("else" stmt)?
  *        | "switch" "(" expr ")" stmt
@@ -514,6 +514,37 @@ static Type *type_suffix(Type *ty) {
   return ty;
 }
 
+// "{" (expr ("," expr)*)? "}"
+static Node *array_initializer(Node *var_node) {
+  if (var_node->var->ty->kind != TY_ARRAY)
+    error_at(current_token->loc, "an array initializer for non array type variable");
+
+  skip("{");
+
+  Node head = {};
+  Node *cur = &head;
+  int i = 0;
+  while (!equal(current_token, "}")) {
+    if (i != 0)
+      skip(",");
+
+    // Buid nodes representing `*(a + 2) = expr;`
+    Node *deref_node = new_unary_node(
+      ND_DEREF,
+      new_add_node(var_node, new_num_node(i))
+    );
+    Node *assign_node = new_binary_node(ND_ASSIGN, deref_node, expr());
+    cur = cur->next = new_unary_node(ND_EXPR_STMT, assign_node);
+    i++;
+  }
+
+  if (var_node->var->ty->array_len != i)
+    error_at(current_token->loc, "wrong number of array length");
+
+  skip("}");
+  return head.next;
+}
+
 // declaration = typespec (declarator ("=" expr)?)? ";"
 static Node *declaration() {
   VarAttr attr = {};
@@ -547,8 +578,14 @@ static Node *declaration() {
   skip("=");
   Node *var_node = new_node(ND_VAR);
   var_node->var = var;
-  Node *assign_node = new_binary_node(ND_ASSIGN, var_node, expr());
-  node->body = new_unary_node(ND_EXPR_STMT, assign_node);
+
+  if (equal(current_token, "{")) {
+    // linked list of assign statements
+    node->body = array_initializer(var_node);
+  } else {
+    Node *assign_node = new_binary_node(ND_ASSIGN, var_node, expr());
+    node->body = new_unary_node(ND_EXPR_STMT, assign_node);
+  }
   skip(";");
   return node;
 }
