@@ -212,7 +212,7 @@ static Node *primary();
  *   enum_list = ident ("," ident)*
  *   func_params = typespec declarator ("," typespec declarator)*
  *   declarator = "*"* ident type_suffix
- *   type_suffix = "[" num "]"
+ *   type_suffix = "[" num "]" type_suffix
  *               | "(" func_params ")"
  *               | ε
  *   compound_stmt = (declaration | stmt)*
@@ -492,17 +492,18 @@ static Type *declarator(Type *ty) {
   return ty;
 }
 
-// type_suffix = "[" num "]"
+// type_suffix = "[" num "]" type_suffix
 //             | "(" func_params ")"
 //             | ε
 static Type *type_suffix(Type *ty) {
   if (consume("[")) {
     if (current_token->kind != TK_NUM)
       error_at(current_token->loc, "expected a number");
-    ty = array_of(ty, current_token->val);
+    int len = current_token->val;
     current_token = current_token->next;
     skip("]");
-    return ty;
+    ty = type_suffix(ty);
+    return array_of(ty, len);
   }
 
   if (consume("(")) {
