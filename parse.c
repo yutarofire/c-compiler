@@ -242,7 +242,7 @@ static Node *primary();
  *         | ("++" | "--") unary
  *         | "sizeof" unary
  *         | postfix
- *   postfix = primary ("[" expr "]" | "." ident | "->" indent | "++" | "--")?
+ *   postfix = primary (("[" expr "]")* | "." ident | "->" indent | "++" | "--")?
  *   primary = "(" "{" compound_stmt "}" ")"
  *           | "(" expr ")"
  *           | ident ("(" func_args? ")")?
@@ -1107,17 +1107,20 @@ static Node *new_dec(Node *node) {
   return stmt_expr;
 }
 
-// postfix = primary ("[" expr "]" | "." ident | "->" indent | "++" | "--")?
+// postfix = primary (("[" expr "]")* | "." ident | "->" indent | "++" | "--")
 static Node *postfix() {
   Node *node = primary();
 
-  if (consume("[")) {
-    Node *idx = expr();
-    node = new_unary_node(
-      ND_DEREF,
-      new_add_node(node, idx)
-    );
-    skip("]");
+  if (equal(current_token, "[")) {
+    while (equal(current_token, "[")) {
+      skip("[");
+      Node *idx = expr();
+      node = new_unary_node(
+        ND_DEREF,
+        new_add_node(node, idx)
+      );
+      skip("]");
+    }
   }
 
   if (consume(".")) {
