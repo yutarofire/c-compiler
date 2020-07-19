@@ -158,6 +158,12 @@ int main() {
   assert(4, ({ int x; sizeof x; }), "({ int x; sizeof x; })");
   assert(8, ({ int *x; sizeof(x); }), "({ int *x; sizeof(x); })");
   assert(16, ({ int x[4]; sizeof(x); }), "({ int x[4]; sizeof(x); })");
+  assert(48, ({ int x[3][4]; sizeof(x); }), "({ int x[3][4]; sizeof(x); })");
+  assert(16, ({ int x[3][4]; sizeof(*x); }), "({ int x[3][4]; sizeof(*x); })");
+  assert(4, ({ int x[3][4]; sizeof(**x); }), "({ int x[3][4]; sizeof(**x); })");
+  assert(5, ({ int x[3][4]; sizeof(**x) + 1; }), "({ int x[3][4]; sizeof(**x) + 1; })");
+  assert(5, ({ int x[3][4]; sizeof **x + 1; }), "({ int x[3][4]; sizeof **x + 1; })");
+  assert(4, ({ int x[3][4]; sizeof(**x + 1); }), "({ int x[3][4]; sizeof(**x + 1); })");
 
   assert(4, ({ int x=1; sizeof(x=2); }), "({ int x=1; sizeof(x=2); })");
   assert(1, ({ int x=1; sizeof(x=2); x; }), "({ int x=1; sizeof(x=2); x; })");
