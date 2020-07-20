@@ -516,37 +516,6 @@ static Type *type_suffix(Type *ty) {
   return ty;
 }
 
-// "{" (expr ("," expr)*)? "}"
-static Node *array_initializer(Node *var_node) {
-  if (var_node->var->ty->kind != TY_ARRAY)
-    error_at(current_token->loc, "an array initializer for non array type variable");
-
-  skip("{");
-
-  Node head = {};
-  Node *cur = &head;
-  int i = 0;
-  while (!equal(current_token, "}")) {
-    if (i != 0)
-      skip(",");
-
-    // Buid nodes representing `*(a + 2) = expr;`
-    Node *deref_node = new_unary_node(
-      ND_DEREF,
-      new_add_node(var_node, new_num_node(i))
-    );
-    Node *assign_node = new_binary_node(ND_ASSIGN, deref_node, expr());
-    cur = cur->next = new_unary_node(ND_EXPR_STMT, assign_node);
-    i++;
-  }
-
-  if (var_node->var->ty->array_len != i)
-    error_at(current_token->loc, "wrong number of array length");
-
-  skip("}");
-  return head.next;
-}
-
 // declaration = typespec (declarator ("=" expr)?)? ";"
 static Node *declaration() {
   VarAttr attr = {};
@@ -581,6 +550,37 @@ static Node *declaration() {
   node->body = lvar_initializer(var);
   skip(";");
   return node;
+}
+
+// "{" (expr ("," expr)*)? "}"
+static Node *array_initializer(Node *var_node) {
+  if (var_node->var->ty->kind != TY_ARRAY)
+    error_at(current_token->loc, "an array initializer for non array type variable");
+
+  skip("{");
+
+  Node head = {};
+  Node *cur = &head;
+  int i = 0;
+  while (!equal(current_token, "}")) {
+    if (i != 0)
+      skip(",");
+
+    // Buid nodes representing `*(a + 2) = expr;`
+    Node *deref_node = new_unary_node(
+      ND_DEREF,
+      new_add_node(var_node, new_num_node(i))
+    );
+    Node *assign_node = new_binary_node(ND_ASSIGN, deref_node, expr());
+    cur = cur->next = new_unary_node(ND_EXPR_STMT, assign_node);
+    i++;
+  }
+
+  if (var_node->var->ty->array_len != i)
+    error_at(current_token->loc, "wrong number of array length");
+
+  skip("}");
+  return head.next;
 }
 
 // A variable definition with an initializer is a shorthand notation
