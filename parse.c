@@ -186,6 +186,7 @@ static Type *declarator(Type *type);
 static Type *type_suffix(Type *type);
 static Node *compound_stmt();
 static Node *declaration();
+static Node *lvar_initializer();
 static Node *stmt();
 static Node *expr();
 static Node *assign();
@@ -577,18 +578,30 @@ static Node *declaration() {
   }
 
   skip("=");
+  node->body = lvar_initializer(var);
+  skip(";");
+  return node;
+}
+
+// A variable definition with an initializer is a shorthand notation
+// for a variable definition followed by assignments. This function
+// generates assignment expressions for an initializer. For example,
+// `int x[2] = {{6, 7}, {8, 9}}` is converted to the following
+// expressions:
+//
+//   x[0][0] = 6;
+//   x[0][1] = 7;
+//   x[1][0] = 8;
+//   x[1][1] = 9;
+static Node *lvar_initializer(Var *var) {
   Node *var_node = new_node(ND_VAR);
   var_node->var = var;
 
-  if (equal(current_token, "{")) {
-    // linked list of assign statements
-    node->body = array_initializer(var_node);
-  } else {
-    Node *assign_node = new_binary_node(ND_ASSIGN, var_node, expr());
-    node->body = new_unary_node(ND_EXPR_STMT, assign_node);
-  }
-  skip(";");
-  return node;
+  if (equal(current_token, "{"))
+    return array_initializer(var_node);
+
+  Node *assign_node = new_binary_node(ND_ASSIGN, var_node, expr());
+  return new_unary_node(ND_EXPR_STMT, assign_node);
 }
 
 static void enter_scope() {
