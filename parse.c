@@ -552,7 +552,6 @@ static Node *declaration() {
   return node;
 }
 
-// "{" (expr ("," expr)*)? "}"
 static Node *array_initializer(Node *var_node) {
   if (var_node->var->ty->kind != TY_ARRAY)
     error_at(current_token->loc, "an array initializer for non array type variable");
@@ -566,7 +565,7 @@ static Node *array_initializer(Node *var_node) {
     if (i != 0)
       skip(",");
 
-    // Buid nodes representing `*(a + 2) = expr;`
+    // Buid nodes representing `*(a + 2) = expr`
     Node *deref_node = new_unary_node(
       ND_DEREF,
       new_add_node(var_node, new_num_node(i))
@@ -586,7 +585,7 @@ static Node *array_initializer(Node *var_node) {
 // A variable definition with an initializer is a shorthand notation
 // for a variable definition followed by assignments. This function
 // generates assignment expressions for an initializer. For example,
-// `int x[2] = {{6, 7}, {8, 9}}` is converted to the following
+// `int x[2][2] = {{6, 7}, {8, 9}}` is converted to the following
 // expressions:
 //
 //   x[0][0] = 6;
