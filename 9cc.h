@@ -215,8 +215,3 @@ void add_type(Node *node);
  * codegen.c
  */
 void codegen(Program *prog);
-
-// Debugger
-void debug_token(Token *token);
-void debug_func(Function *func);
-void debug_node(Node *node);
