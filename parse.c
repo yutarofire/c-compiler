@@ -1,4 +1,4 @@
-#include "9cc.h"
+#include "occ.h"
 
 static Token *current_token;
 

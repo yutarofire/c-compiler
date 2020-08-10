@@ -1,4 +1,4 @@
-#include "9cc.h"
+#include "occ.h"
 
 static int top;
 static int labelseq = 1;
