@@ -541,13 +541,9 @@ static Node *declaration() {
 
   Var *var = new_lvar(ty);
 
-  if (!equal(current_token, "=")) {
-    skip(";");
-    return node;
-  }
+  if (consume("="))
+    node->body = lvar_initializer(var);
 
-  skip("=");
-  node->body = lvar_initializer(var);
   skip(";");
   return node;
 }
