@@ -66,9 +66,9 @@ static void gen_addr(Node *node) {
       gen_addr(node->lhs);
       printf("  add %s, %d\n", reg(top - 1), node->member->offset);
       return;
+    default:
+      error("expected a variable or dereferencer");
   }
-
-  error("expected a variable or dereferencer");
 }
 
 static void gen_expr(Node *node) {
