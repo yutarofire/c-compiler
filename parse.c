@@ -229,7 +229,7 @@ static Node *primary();
  *        | "{" compound_stmt "}"
  *        | expr_stmt ";"
  *   expr_stmt = expr
- *   expr = assign
+ *   expr = assign ("," expr)?
  *   assign = logor (assign_op assign)?
  *   assign_op = "=" | "+=" | "-=" | "*=" | "/="
  *   logor = logand ("||" logand)*
@@ -561,12 +561,12 @@ static Node *array_initializer(Node *var_node) {
     if (i != 0)
       skip(",");
 
-    // Buid nodes representing `*(a + 2) = expr`
+    // Build nodes representing `*(a + 2) = assign`.
     Node *deref_node = new_unary_node(
       ND_DEREF,
       new_add_node(var_node, new_num_node(i))
     );
-    Node *assign_node = new_binary_node(ND_ASSIGN, deref_node, expr());
+    Node *assign_node = new_binary_node(ND_ASSIGN, deref_node, assign());
     cur = cur->next = new_unary_node(ND_EXPR_STMT, assign_node);
     i++;
   }
@@ -814,9 +814,14 @@ static Node *stmt() {
   return node;
 }
 
-// expr = assign
+// expr = assign ("," expr)?
 static Node *expr() {
-  return assign();
+  Node *node = assign();
+
+  if (consume(","))
+    node = new_binary_node(ND_COMMA, node, expr());
+
+  return node;
 }
 
 // assign = logor (assign_op assign)?
@@ -1159,7 +1164,7 @@ static Node *func_args() {
   while (!equal(current_token, ")")) {
     if (cur != &head)
       skip(",");
-    cur = cur->next = expr();
+    cur = cur->next = assign();
   }
 
   return head.next;

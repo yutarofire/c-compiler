@@ -66,6 +66,11 @@ static void gen_addr(Node *node) {
       gen_addr(node->lhs);
       printf("  add %s, %d\n", reg(top - 1), node->member->offset);
       return;
+    case ND_COMMA:
+      gen_expr(node->lhs);
+      top--;
+      gen_addr(node->rhs);
+      return;
     default:
       error("expected a variable or dereferencer");
   }
@@ -127,6 +132,11 @@ static void gen_expr(Node *node) {
       printf(".L.end.%d:\n", seq);
       return;
     }
+    case ND_COMMA:
+      gen_expr(node->lhs);
+      top--;
+      gen_expr(node->rhs);
+      return;
     case ND_FUNCALL: {
       int nargs = 0;
       // First, evaluate args and put them to the stack.
