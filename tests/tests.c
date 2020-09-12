@@ -333,8 +333,8 @@ int main() {
   assert(3, ({ int x[3]={1,2,3}; x[2]; }), "({ int x[3]={1,2,3}; x[2]; })");
 
   assert(3, (1,2,3), "(1,2,3)");
-  // assert(5, ({ int i=2; int j=3; (i=5,j)=6; i; }), "({ int i=2; int j=3; (i=5,j)=6; i; })");
-  // assert(6, ({ int i=2; int j=3; (i=5,j)=6; j; }), "({ int i=2; int j=3; (i=5,j)=6; j; })");
+  assert(5, ({ int i=2; int j=3; (i=5,j)=6; i; }), "({ int i=2; int j=3; (i=5,j)=6; i; })");
+  assert(6, ({ int i=2; int j=3; (i=5,j)=6; j; }), "({ int i=2; int j=3; (i=5,j)=6; j; })");
 
   printf("OK\n");
   return 0;
