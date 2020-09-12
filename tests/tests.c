@@ -301,7 +301,7 @@ int main() {
   assert(1, 1&&5, "1&&5");
 
   assert(3, ({ int i; for (i=0; i<10; i++) { if (i==3) break; } i; }), "({ int i; for (i=0; i<10; i++) { if (i==3) break; } i; })");
-  assert(3, ({ int i; while (i<10) { if (i==3) break; i++; } i; }), "({ int i; while (i<10) { if (i==3) break; i++; } i; })");
+  assert(3, ({ int i=0; while (i<10) { if (i==3) break; i++; } i; }), "({ int i=0; while (i<10) { if (i==3) break; i++; } i; })");
 
   assert(3, ({ int i=0; for(;i<10;i++) { if (i == 3) break; } i; }), "({ int i=0; for(;i<10;i++) { if (i == 3) break; } i; })");
   assert(4, ({ int i=0; while (1) { if (i++ == 3) break; } i; }), "({ int i=0; while (1) { if (i++ == 3) break; } i; })");
